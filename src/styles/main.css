@@ -1,0 +1,11 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+@import "primeicons/primeicons.css";
+
+body {
+  background-color: var(--p-surface-0);
+  color: var(--p-text-color);
+  font-size: 14px;
+  /* Refined, smaller text */
+}
