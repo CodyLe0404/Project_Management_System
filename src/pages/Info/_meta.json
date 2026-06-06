@@ -1,4 +1,5 @@
 {
     "title": "Information",
-    "icon": "pi pi-info-circle"
+    "icon": "pi pi-info-circle",
+    "hidden": true
 }

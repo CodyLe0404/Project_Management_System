@@ -13,8 +13,8 @@
     >
 
         <div class="p-6 h-16 flex items-center justify-between border-b border-surface-200 dark:border-surface-700">
-            <span class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-indigo-500">
-                TESTING
+            <span class="text-sm font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-indigo-500">
+                QUẢN TRỊ NỘI BỘ
             </span>
             <!-- Sidebar Toggle (Inside) - Always visible when Sidebar is Open -->
             <Button icon="pi pi-bars" text rounded @click="toggleSidebar" />
@@ -24,7 +24,7 @@
             <PanelMenu :model="items" class="w-full border-none" />
         </div>
 
-        <!-- User Profile & Logout -->
+        <!-- User Profile & Logout
         <div class="p-4 border-t border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/50">
             <div class="flex items-center gap-3 mb-3">
                 <div class="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary-600 dark:text-primary-300 font-bold">
@@ -40,7 +40,7 @@
                 </div>
             </div>
             <Button label="Logout" icon="pi pi-sign-out" severity="danger" outlined class="w-full" @click="confirmLogout" />
-        </div>
+        </div> -->
     </aside>
 
     <!-- Content -->
@@ -49,7 +49,7 @@
         :class="{ 'lg:ml-72': sidebarOpenDesktop, 'lg:ml-0': !sidebarOpenDesktop }"
     >
         <!-- Topbar -->
-        <header class="h-16 bg-surface-0/80 backdrop-blur-md border-b border-surface-200 sticky top-0 z-40 px-6 flex items-center justify-between">
+        <!-- <header class="h-16 bg-surface-0/80 backdrop-blur-md border-b border-surface-200 sticky top-0 z-40 px-6 flex items-center justify-between"> -->
             <div class="flex items-center gap-4">
                 <!-- Toggle Button (Outside) - Hidden on Desktop if Sidebar is Open -->
                 <div :class="{ 'lg:hidden': sidebarOpenDesktop }">
@@ -60,11 +60,11 @@
                     />
                 </div>
                 
-                <span class="font-bold text-lg">Dashboard</span>
+                <!-- <span class="font-bold text-lg">Dashboard</span> -->
             </div>
             
             <div class="w-8"></div>
-        </header>
+        <!-- </header> -->
 
         <div class="p-4 w-full">
             <router-view v-slot="{ Component }">

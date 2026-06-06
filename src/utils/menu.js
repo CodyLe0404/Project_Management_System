@@ -90,6 +90,7 @@ export function getMenuItems(routes, routerPush, permissionCheckFn) {
 
                 if (isLast) {
                     item.command = () => routerPush(fullPath);
+                    item.path = fullPath;
                 } else {
                     item.items = [];
                 }

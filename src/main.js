@@ -11,7 +11,7 @@ import { EnCoApiClientService } from './services/EnCo/EnCoApiClientService.js';
 const app = createApp(App)
 
 // Setup API Client
-const apiClient = new EnCoApiClientService(import.meta.env.VITE_API_BASE_URL);
+const apiClient = new EnCoApiClientService(import.meta.env.VITE_API_BASE_URL || "http://localhost:5067");
 app.provide('apiClient', apiClient);
 
 app.use(router)

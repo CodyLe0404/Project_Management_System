@@ -3,7 +3,8 @@
   meta: {
     title: "EnCo API Tester",
     icon: "pi pi-beaker",
-    permission: ["admin"]
+    permission: ["admin"],
+    hidden: true
   }
 }
 </route>

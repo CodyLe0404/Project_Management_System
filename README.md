@@ -170,13 +170,26 @@ Control access to specific pages using the `<route>` block in Vue files:
 ## 📦 Installation & Setup
 
 ```bash
-# 1. Install Dependencies
+# 1. Install Vue dependencies
 npm install
 
-# 2. Run Development Server
+# 2. Install backend dependencies
+cd backend
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+cd ..
+
+# 3. Run backend server
+cd backend
+.venv\Scripts\activate
+uvicorn main:app --reload --host 127.0.0.1 --port 8000
+
+# 4. Run frontend server
+cd ..
 npm run dev
 
-# 3. Build for Production
+# 5. Build for Production
 npm run build
 ```
 

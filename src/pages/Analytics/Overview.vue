@@ -2,7 +2,8 @@
 {
   meta: {
     title: "Analytics Overview",
-    icon: "pi pi-chart-bar"
+    icon: "pi pi-chart-bar",
+    hidden: true
   }
 }
 </route>

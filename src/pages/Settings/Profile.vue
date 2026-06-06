@@ -2,7 +2,8 @@
 {
   meta: {
     title: "User Profile",
-    icon: "pi pi-user"
+    icon: "pi pi-user",
+    hidden: true
   }
 }
 </route>
