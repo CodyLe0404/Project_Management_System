@@ -24,9 +24,17 @@
 
     <!-- Project Information Card -->
     
-      <div class="card-header">
+      <div class="card-header header-with-toggle">
         <div>
           <h2>📊 Thông tin dự án</h2>
+        </div>
+
+        <div class="summary-toggle-wrapper">
+          <span class="summary-toggle-title">Summary Task</span>
+          <label class="toggle-container">
+            <input type="checkbox" v-model="summaryTask" />
+            <span class="slider"></span>
+          </label>
         </div>
       </div>
 
@@ -39,7 +47,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, toRaw } from 'vue'
+import { ref, onMounted, toRaw, watch } from 'vue'
 
 import Handsontable from 'handsontable'
 
@@ -59,6 +67,7 @@ registerAllModules()
 
 const hotContainer = ref(null)
 const tableData = ref([])
+const summaryTask = ref(false)
 
 let hot = null
 
@@ -111,7 +120,7 @@ const loadData = async () => {
     hot = new Handsontable(
       hotContainer.value,
       {
-        data: toRaw(tableData.value),
+        data: toRaw(getDisplayedRows()),
 
         width: '100%',
         height: 750,
@@ -144,8 +153,8 @@ const loadData = async () => {
           'Actual Start',
           'Actual End',
           'Actual Day',
-          'Weight',
-          'Contrib',
+          // 'Weight',
+          // 'Contrib',
           'Budget',
           'Actual Cost',
           'Budget Variance',
@@ -201,7 +210,8 @@ const loadData = async () => {
           },
           {
             data: 'status',
-            readOnly: true
+            readOnly: true,
+            width: getStatusColumnWidth(tableData.value)
           },
           {
             data: 'plan_start',
@@ -237,16 +247,16 @@ const loadData = async () => {
             type: 'numeric',
             readOnly: true
           },
-          {
-            data: 'weight',
-            type: 'numeric',
-            readOnly: true
-          },
-          {
-            data: 'contrib',
-            type: 'numeric',
-            readOnly: true
-          },
+          // {
+          //   data: 'weight',
+          //   type: 'numeric',
+          //   readOnly: true
+          // },
+          // {
+          //   data: 'contrib',
+          //   type: 'numeric',
+          //   readOnly: true
+          // },
           {
             data: 'budget',
             type: 'numeric',
@@ -314,6 +324,35 @@ const loadData = async () => {
   }
 }
 
+function getDisplayedRows() {
+  return summaryTask.value
+    ? tableData.value.filter(row => row.is_header)
+    : tableData.value
+}
+
+function getStatusColumnWidth(rows) {
+  const canvas = document.createElement('canvas')
+  const context = canvas.getContext('2d')
+  context.font = '14px Inter, sans-serif'
+
+  const values = rows
+    .map(row => row.status || '')
+    .concat('Status')
+
+  const maxWidth = values.reduce((max, value) => {
+    const width = context.measureText(value).width
+    return width > max ? width : max
+  }, 0)
+
+  return Math.ceil(maxWidth + 50)
+}
+
+watch(summaryTask, () => {
+  if (hot) {
+    hot.loadData(toRaw(getDisplayedRows()))
+  }
+})
+
 function getRowProcess(row) {
   const hasPlanStart = Boolean(row.plan_start)
   const hasPlanEnd = Boolean(row.plan_end)
@@ -336,10 +375,6 @@ function getHeaderProcess(rows) {
   )
 
   return Math.round(total / rows.length)
-}
-
-function calculateProjectPercent(rows) {
-  return getHeaderProcess(rows)
 }
 
 function getMinDate(rows, field) {
@@ -422,14 +457,6 @@ function calculateDays(startDate, endDate) {
 
 function buildProjectRows(rows) {
   const grouped = {}
-
-  // rows.forEach(row => {
-  //   if (!grouped[row.project_id]) {
-  //     grouped[row.project_id] = []
-  //   }
-
-  //   grouped[row.project_id].push(row)
-  // })
 
   rows.forEach(row => {
     const key = `${row.project_id}_${row.main_task}`
@@ -607,10 +634,8 @@ onMounted(async () => {
   display: flex;
   justify-content: flex-end;
 
-  margin-bottom: 1px;
-
   position: sticky;
-  top: 10px;
+  top: 0;
 
   z-index: 100;
 }
@@ -670,16 +695,23 @@ onMounted(async () => {
 }
 
 .card-header {
-  margin-bottom: 30px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
 }
 
 .card-header h2 {
   margin: 0;
-
   font-size: 24px;
   font-weight: 700;
 
   color: #111827;
+}
+
+.header-with-toggle {
+  flex-wrap: wrap;
 }
 
 .card-header p {
@@ -696,6 +728,51 @@ onMounted(async () => {
 .hot-wrapper {
   width: 100%;
   overflow: hidden;
+}
+
+.summary-toggle-wrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin: 0;
+  padding-top: 20px;
+}
+
+.summary-toggle-title {
+  font-weight: 700;
+  color: #111827;
+}
+
+.toggle-switch {
+  width: 50px;
+  height: 25px;
+  border-radius: 999px;
+  border: none;
+  background: #cbd5e1;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  outline: none;
+}
+
+.toggle-switch-on {
+  background: #1e3a8a;
+}
+
+.toggle-switch-handle {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: left 0.2s ease;
+}
+
+.toggle-switch-on .toggle-switch-handle {
+  left: calc(50% - 25px);
 }
 
 </style>
@@ -787,3 +864,62 @@ onMounted(async () => {
 }
 
 </style>
+
+<style>
+    /* 1. Thiết lập vùng chứa bao quanh */
+    .toggle-container {
+      display: inline-block;
+      position: relative;
+      width: 48px;
+      height: 26px;
+    }
+
+    /* 2. Ẩn checkbox mặc định của trình duyệt */
+    .toggle-container input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    /* 3. Khung nền của Toggle (Trạng thái TẮT - Mặc định) */
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #cbd5e1; /* Màu xám nhạt */
+      border-radius: 999px; /* Bo tròn hoàn toàn */
+      transition: background-color 0.2s ease;
+    }
+
+    /* 4. Vòng tròn nhỏ bên trong */
+    .slider::before {
+      content: "";
+      position: absolute;
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      /* Tạo hiệu ứng di chuyển mượt mà */
+      transition: transform 0.2s ease;
+    }
+
+    /* 5. THAY ĐỔI KHI BẬT (Khi checkbox được check) */
+    
+    /* Đổi màu nền thành màu đen giống ảnh mẫu */
+    input:checked + .slider {
+      background-color: #063377; 
+    }
+
+    /* Dịch chuyển vòng tròn nhỏ sang bên phải */
+    input:checked + .slider::before {
+      /* Tổng chiều rộng 50px - nút tròn 22px - lề trái 3px = cách lề phải 3px.
+         Dịch chuyển chính xác 22px là vừa vặn nhất */
+      transform: translateX(22px);
+    }
+  </style>

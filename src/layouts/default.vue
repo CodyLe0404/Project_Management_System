@@ -24,7 +24,7 @@
             <PanelMenu :model="items" class="w-full border-none" />
         </div>
 
-        <!-- User Profile & Logout
+        <!-- User Profile & Logout -->
         <div class="p-4 border-t border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/50">
             <div class="flex items-center gap-3 mb-3">
                 <div class="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary-600 dark:text-primary-300 font-bold">
@@ -40,7 +40,7 @@
                 </div>
             </div>
             <Button label="Logout" icon="pi pi-sign-out" severity="danger" outlined class="w-full" @click="confirmLogout" />
-        </div> -->
+        </div>
     </aside>
 
     <!-- Content -->
