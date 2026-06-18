@@ -13,6 +13,15 @@
   <section class="table-card">
     <!-- Toolbar -->
     <div class="toolbar">
+      <div class="toolbar-search-wrap">
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Search Project"
+          class="search-input"
+        />
+      </div>
+
       <button
         @click="calculateAndSave"
         class="save-btn"
@@ -68,6 +77,7 @@ registerAllModules()
 const hotContainer = ref(null)
 const tableData = ref([])
 const summaryTask = ref(false)
+const searchQuery = ref('')
 
 let hot = null
 
@@ -270,7 +280,8 @@ const loadData = async () => {
           {
             data: 'budget_variance',
             type: 'numeric',
-            readOnly: true
+            readOnly: true,
+            renderer: hideRepeatedRenderer
           },
           {
             data: 'remark'
@@ -325,9 +336,24 @@ const loadData = async () => {
 }
 
 function getDisplayedRows() {
-  return summaryTask.value
+  const baseRows = summaryTask.value
     ? tableData.value.filter(row => row.is_header)
     : tableData.value
+
+  const query = String(searchQuery.value || '').trim().toLowerCase()
+  if (!query) {
+    return baseRows
+  }
+
+  return baseRows.filter(row => {
+    const projectNumber = String(row.project_number || '').toLowerCase()
+    const projectName = String(row.project_name || '').toLowerCase()
+
+    return (
+      projectNumber.includes(query) ||
+      projectName.includes(query)
+    )
+  })
 }
 
 function getStatusColumnWidth(rows) {
@@ -347,7 +373,7 @@ function getStatusColumnWidth(rows) {
   return Math.ceil(maxWidth + 50)
 }
 
-watch(summaryTask, () => {
+watch([summaryTask, searchQuery], () => {
   if (hot) {
     hot.loadData(toRaw(getDisplayedRows()))
   }
@@ -586,7 +612,8 @@ const hideRepeatedColumns = [
   'project_name',
   'main_task',
   'budget',
-  'actual_cost'
+  'actual_cost',
+  'budget_variance'
 ]
 
 function hideRepeatedRenderer(
@@ -600,12 +627,29 @@ function hideRepeatedRenderer(
 ) {
   const rowData = instance.getSourceDataAtRow(row)
 
-  if (
-    rowData &&
-    !rowData.is_header &&
-    hideRepeatedColumns.includes(prop)
-  ) {
+  // Helper: format numeric values as USD currency
+  const currencyFormatter = (val) => {
+    if (val === null || val === undefined || val === '') return ''
+    const normalized = String(val).toString().replace(/[^0-9.-]/g, '')
+    const num = Number(normalized)
+    if (Number.isNaN(num)) return ''
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(num)
+  }
+
+  // If this is a detail row and the column is in hideRepeatedColumns, hide repeated values
+  if (rowData && !rowData.is_header && hideRepeatedColumns.includes(prop)) {
     td.textContent = ''
+    return td
+  }
+
+  // Render currency columns with formatting
+  if (['budget', 'actual_cost', 'budget_variance'].includes(prop)) {
+    td.textContent = currencyFormatter(value)
     return td
   }
 
@@ -620,7 +664,7 @@ onMounted(async () => {
 <style scoped>
 
 .project-page {
-  padding: 1px;
+  padding: 0;
   background: #f5f7fb;
   min-height: 100vh;
   height: 100%;
@@ -632,12 +676,41 @@ onMounted(async () => {
 
 .toolbar {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  position: relative;
+  gap: 16px;
 
   position: sticky;
   top: 0;
 
   z-index: 100;
+  background: white;
+  padding: 10px 1px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.toolbar-search-wrap {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(420px, calc(100% - 240px));
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  color: #111827;
+  background: #ffffff;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 /* ======================================

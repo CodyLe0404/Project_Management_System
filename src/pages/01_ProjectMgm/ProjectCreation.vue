@@ -38,9 +38,6 @@
             <h2 class="text-lg font-semibold text-slate-900">2. Hạng mục chính và ngân sách</h2>
             <!-- <p class="text-sm text-slate-500">Thêm hạng mục mới khi cần, và xóa nếu nhầm.</p> -->
           </div>
-          <button @click="addItem" class="inline-flex items-center justify-center gap-2 rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700">
-            <span>➕ Thêm Hạng mục mới</span>
-          </button>
         </div>
 
         <div class="space-y-4">
@@ -65,7 +62,15 @@
               </div>
               <div>
                 <label class="block text-sm text-slate-600 mb-1">Ngân sách (Budget)</label>
-                <input v-model="item.budget" type="text" placeholder="0" class="w-full border border-slate-300 rounded-2xl px-3 py-2 text-sm text-slate-900 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100" />
+                <input
+                  :value="item.isBudgetEditing ? item.budget : formatCurrency(item.budget)"
+                  @input="event => handleBudgetInput(event, item)"
+                  @focus="handleBudgetFocus(item)"
+                  @blur="handleBudgetBlur(item)"
+                  type="text"
+                  placeholder="0"
+                  class="w-full border border-slate-300 rounded-2xl px-3 py-2 text-sm text-slate-900 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100"
+                />
               </div>
             </div>
             <div class="mt-4">
@@ -79,9 +84,17 @@
     <div class="mt-3 text-sm text-yellow-700 font-semibold bg-yellow-50 p-3 rounded border border-yellow-200" v-if="validationError">{{ validationError }}</div>
     <div class="mt-3 text-sm text-red-600" v-if="saveError">{{ saveError }}</div>
     <div class="mt-3 text-sm text-green-600 font-semibold" v-if="saveSuccess">✅ {{ saveSuccess }}</div>
-    <div class="mt-5 flex flex-col items-end gap-2">
-      <p class="text-sm text-slate-500" v-if="isSaving">Đang lưu dự án... Vui lòng chờ.</p>
-      <button @click="createAndEmit" :disabled="isSaving" class="inline-flex items-center justify-center rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-400">💾 KHỞI TẠO VÀ ĐƯA VÀO BẢNG</button>
+    <div class="mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <div class="flex items-center">
+        <button @click="addItem" class="inline-flex items-center justify-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700">
+          <span>➕ Thêm Hạng mục mới</span>
+        </button>
+      </div>
+
+      <div class="flex flex-col items-end gap-2">
+        <p class="text-sm text-slate-500" v-if="isSaving">Đang lưu dự án... Vui lòng chờ.</p>
+        <button @click="createAndEmit" :disabled="isSaving" class="inline-flex items-center justify-center rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-400">💾 KHỞI TẠO VÀ ĐƯA VÀO BẢNG</button>
+      </div>
     </div>
   </section>
 </template>
@@ -118,17 +131,50 @@ const items = ref([
     main_task: '',
     qty: '',
     budget: '',
+    isBudgetEditing: false,
     subtasks: defaultSubtasks,
     removable: false
   }
 ])
 
 const addItem = () => {
-  items.value.push({ id: idCounter++, main_task: '', qty: '', budget: '', subtasks: defaultSubtasks, removable: true })
+  items.value.push({ id: idCounter++, main_task: '', qty: '', budget: '', isBudgetEditing: false, subtasks: defaultSubtasks, removable: true })
 }
 
 const removeItem = (index) => {
   items.value.splice(index, 1)
+}
+
+const formatCurrency = (value) => {
+  const normalized = String(value ?? '').replace(/[^0-9.-]/g, '')
+  const number = Number(normalized)
+  if (!normalized.trim() || Number.isNaN(number)) {
+    return ''
+  }
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(number)
+}
+
+const parseCurrency = (value) => {
+  return String(value ?? '').replace(/[^0-9.-]/g, '')
+}
+
+const handleBudgetInput = (event, item) => {
+  const raw = String(event.target.value).replace(/[^0-9.]/g, '')
+  item.budget = raw
+}
+
+const handleBudgetFocus = (item) => {
+  item.isBudgetEditing = true
+}
+
+const handleBudgetBlur = (item) => {
+  item.isBudgetEditing = false
+  item.budget = parseCurrency(item.budget)
 }
 
 const emit = defineEmits(['create-project'])
@@ -191,7 +237,14 @@ const createAndEmit = async () => {
   // Tạo clone dữ liệu để chuẩn bị gửi đi
   const payload = {
     general: { ...general },
-    items: items.value.map(i => ({ ...i }))
+    items: items.value.map(i => ({
+      id: i.id,
+      main_task: i.main_task,
+      qty: i.qty,
+      budget: parseCurrency(i.budget),
+      subtasks: i.subtasks,
+      removable: i.removable
+    }))
   }
 
   try {
