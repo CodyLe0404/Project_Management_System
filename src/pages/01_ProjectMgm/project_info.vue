@@ -15,6 +15,7 @@
     <div class="toolbar">
       <div class="toolbar-search-wrap">
         <input
+          ref="searchInput"
           v-model="searchQuery"
           type="text"
           placeholder="Search Project"
@@ -56,7 +57,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, toRaw, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, toRaw, watch } from 'vue'
 
 import Handsontable from 'handsontable'
 
@@ -75,6 +76,7 @@ import {
 registerAllModules()
 
 const hotContainer = ref(null)
+const searchInput = ref(null)
 const tableData = ref([])
 const summaryTask = ref(false)
 const searchQuery = ref('')
@@ -85,7 +87,7 @@ const calculateAndSave = async () => {
   try {
     if (!hot) return
 
-    const source = hot.getSourceData().filter(row => !row.is_header)
+    const source = tableData.value.filter(row => !row.is_header)
     
     const payload = source.map(row => ({
       item_id: row.item_id,
@@ -153,7 +155,7 @@ const loadData = async () => {
           'Project Name',
           'Main Task',
           'Sub Task',
-          'Qty',
+          // 'Qty',
           'Assignee',
           'Process %',
           'Status',
@@ -207,9 +209,9 @@ const loadData = async () => {
             data: 'sub_task',
             readOnly: true
           },
-          {
-            data: 'qty'
-          },
+          // {
+          //   data: 'qty'
+          // },
           {
             data: 'assignee'
           },
@@ -322,6 +324,8 @@ const loadData = async () => {
                   // copy value into the row below
                   this.setDataAtRowProp(nextRow, 'actual_cost', newValue)
                 }
+
+                syncSummaryActualCost(rowData, newValue)
               }
             }
           })
@@ -373,10 +377,26 @@ function getStatusColumnWidth(rows) {
   return Math.ceil(maxWidth + 50)
 }
 
-watch([summaryTask, searchQuery], () => {
+let searchTimer = null
+
+watch(summaryTask, () => {
   if (hot) {
     hot.loadData(toRaw(getDisplayedRows()))
   }
+})
+
+watch(searchQuery, () => {
+  if (!hot) return
+
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    hot.loadData(toRaw(getDisplayedRows()))
+    searchInput.value?.focus()
+  }, 180)
+})
+
+onBeforeUnmount(() => {
+  clearTimeout(searchTimer)
 })
 
 function getRowProcess(row) {
@@ -479,6 +499,20 @@ function calculateDays(startDate, endDate) {
   return Math.ceil(
     (end - start) / (1000 * 60 * 60 * 24)
   )
+}
+
+function syncSummaryActualCost(headerRow, value) {
+  if (!headerRow || !headerRow.is_header) return
+
+  tableData.value.forEach(row => {
+    if (
+      !row.is_header &&
+      row.project_id === headerRow.project_id &&
+      row.main_task === headerRow.main_task
+    ) {
+      row.actual_cost = value
+    }
+  })
 }
 
 function buildProjectRows(rows) {
