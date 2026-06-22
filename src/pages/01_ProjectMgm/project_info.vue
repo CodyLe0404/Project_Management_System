@@ -26,9 +26,10 @@
       <button
         @click="calculateAndSave"
         class="save-btn"
+        :disabled="isSaving"
       >
         <i class="pi pi-save"></i>
-        CALCULATE & SAVE
+        {{ isSaving ? 'SAVING...' : 'CALCULATE & SAVE' }}
       </button>
     </div>
 
@@ -80,12 +81,17 @@ const searchInput = ref(null)
 const tableData = ref([])
 const summaryTask = ref(false)
 const searchQuery = ref('')
+const isSaving = ref(false)
 
 let hot = null
 
 const calculateAndSave = async () => {
+  if (isSaving.value) return
+
   try {
     if (!hot) return
+
+    isSaving.value = true
 
     const source = tableData.value.filter(row => !row.is_header)
     
@@ -118,11 +124,41 @@ const calculateAndSave = async () => {
     console.error(error)
     alert('Save failed')
   }
+  finally {
+    isSaving.value = false
+  }
 }
 
 const loadData = async () => {
   try {
     const rawData = await getProjectsDetails()
+
+    rawData.sort((a, b) => {
+      const projectIdA = a.project_id
+      const projectIdB = b.project_id
+      if (projectIdA !== projectIdB) {
+        return projectIdA > projectIdB ? 1 : -1
+      }
+
+      const projectNumberA = String(a.project_number ?? '')
+      const projectNumberB = String(b.project_number ?? '')
+      const projectNumberCompare = projectNumberA.localeCompare(projectNumberB, undefined, {
+        numeric: true,
+        sensitivity: 'base'
+      })
+      if (projectNumberCompare !== 0) {
+        return projectNumberCompare
+      }
+
+      const itemIdA = a.item_id
+      const itemIdB = b.item_id
+      if (itemIdA !== itemIdB) {
+        return itemIdA > itemIdB ? 1 : -1
+      }
+
+      return 0
+    })
+
     tableData.value = buildProjectRows(rawData || [])
 
     if (hot) {
@@ -155,7 +191,7 @@ const loadData = async () => {
           'Project Name',
           'Main Task',
           'Sub Task',
-          // 'Qty',
+          'Qty',
           'Assignee',
           'Process %',
           'Status',
@@ -209,9 +245,9 @@ const loadData = async () => {
             data: 'sub_task',
             readOnly: true
           },
-          // {
-          //   data: 'qty'
-          // },
+          {
+            data: 'qty'
+          },
           {
             data: 'assignee'
           },
@@ -516,21 +552,46 @@ function syncSummaryActualCost(headerRow, value) {
 }
 
 function buildProjectRows(rows) {
-  const grouped = {}
+  const grouped = new Map()
 
   rows.forEach(row => {
     const key = `${row.project_id}_${row.main_task}`
 
-    if (!grouped[key]) {
-      grouped[key] = []
+    if (!grouped.has(key)) {
+      grouped.set(key, [])
     }
 
-    grouped[key].push(row)
+    grouped.get(key).push(row)
   })
 
   const result = []
 
-  Object.values(grouped).forEach(projectRows => {
+  const sortedGroups = Array.from(grouped.values()).sort((groupA, groupB) => {
+    const firstA = groupA[0]
+    const firstB = groupB[0]
+
+    if (firstA.project_id !== firstB.project_id) {
+      return firstA.project_id > firstB.project_id ? 1 : -1
+    }
+
+    const numberA = String(firstA.project_number ?? '')
+    const numberB = String(firstB.project_number ?? '')
+    const numberCompare = numberA.localeCompare(numberB, undefined, {
+      numeric: true,
+      sensitivity: 'base'
+    })
+
+    return numberCompare
+  })
+
+  sortedGroups.forEach(projectRows => {
+    projectRows.sort((a, b) => {
+      if (a.item_id !== b.item_id) {
+        return a.item_id > b.item_id ? 1 : -1
+      }
+      return 0
+    })
+
     const firstRow = projectRows[0]
 
     const planStart = getMinDate(

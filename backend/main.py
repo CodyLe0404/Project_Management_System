@@ -195,7 +195,7 @@ def get_project_details(conn: pyodbc.Connection = Depends(get_db_connection)):
             FROM [Design_System].[dbo].[Project] p
             JOIN [Design_System].[dbo].[Project_Items] pi ON p.project_id = pi.project_id
             WHERE p.active_flag = 1
-            ORDER BY p.project_id, p.project_number, pi.main_task, pi.sub_task
+            ORDER BY p.project_id, p.project_number, pi.id
         """)
 
         columns = [col[0] for col in cursor.description]
