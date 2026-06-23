@@ -6,6 +6,7 @@ from datetime import datetime
 from contextlib import contextmanager
 import pyodbc
 
+
 # --- DATABASE CONNECTION UTILITY ---
 def get_db_connection() -> Generator[pyodbc.Connection, None, None]:
     SERVER = '10.13.227.98,1433'  
@@ -132,7 +133,7 @@ def create_project(payload: ProjectPayload, conn: pyodbc.Connection = Depends(ge
     try:
         cursor.execute(
             """
-            INSERT INTO [Design_System].[dbo].[Project] (project_id, project_number, project_name, active_flag, created_at, updated_at)
+            INSERT INTO [Design_System].[dbo].[DS_PM_Project] (project_id, project_number, project_name, active_flag, created_at, updated_at)
             VALUES (?, ?, ?, 1, getdate(), getdate())
             """,
             (
@@ -143,7 +144,6 @@ def create_project(payload: ProjectPayload, conn: pyodbc.Connection = Depends(ge
         )
 
         project_id = payload.general['no']
-        task_no = payload.general['taskNo']
         rows = []
         for item in payload.items:
             # Safe boundary check for empty strings
@@ -152,7 +152,7 @@ def create_project(payload: ProjectPayload, conn: pyodbc.Connection = Depends(ge
                 for subtask in subtasks_raw.strip().split('\n'):
                     rows.append((
                         project_id,
-                        task_no,
+                        item['task_no'],
                         item['main_task'],
                         subtask.strip(),
                         item['qty'],
@@ -189,14 +189,15 @@ def get_project_details(conn: pyodbc.Connection = Depends(get_db_connection)):
         cursor.execute("""
             SELECT
                 p.id, p.project_id, p.project_number, p.project_name,
-                pi.item_id, pi.task_no, pi.main_task, pi.sub_task, pi.qty, pi.budget,
+                pi.id_item, pi.task_no, pi.main_task, pi.sub_task, pi.qty, pi.budget,
                 pi.assignee, pi.[percent], pi.status,
                 pi.plan_start, pi.plan_end, pi.actual_start, pi.actual_end,
                 pi.actual_cost, pi.remark
-            FROM [Design_System].[dbo].[Project] p
-            JOIN [Design_System].[dbo].[DS_PM_Item] pi ON p.project_id = pi.project_id
+            FROM [Design_System].[dbo].[DS_PM_Project] p
+            JOIN [Design_System].[dbo].[DS_PM_Item] pi 
+                ON p.project_id = pi.project_id
             WHERE p.active_flag = 1
-            ORDER BY p.project_id, p.project_number, pi.id_item
+            ORDER BY p.id, p.project_number, pi.id_item
         """)
 
         columns = [col[0] for col in cursor.description]
@@ -214,7 +215,7 @@ def get_project_summary(conn: pyodbc.Connection = Depends(get_db_connection)):
         cursor.execute(
             """
             SELECT p.id, p.project_id, pi.plan_start, pi.plan_end, pi.actual_start, pi.actual_end
-                FROM [Design_System].[dbo].[Project] p
+                FROM [Design_System].[dbo].[DS_PM_Project] p
                 LEFT JOIN [Design_System].[dbo].[DS_PM_Item] pi 
                     ON p.project_id = pi.project_id
                 ORDER BY p.id
@@ -285,7 +286,7 @@ def bulk_update(items: List[ProjectItemUpdate], conn: pyodbc.Connection = Depend
                 """
                 UPDATE [Design_System].[dbo].[DS_PM_Item]
                 SET assignee=?, plan_start=?, plan_end=?, actual_start=?, actual_end=?, actual_cost=?, remark=?
-                WHERE id=?
+                WHERE id_item=?
                 """,
                 (
                     item.assignee, item.plan_start, item.plan_end,
@@ -304,3 +305,14 @@ def bulk_update(items: List[ProjectItemUpdate], conn: pyodbc.Connection = Depend
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()
+
+@app.put("/project-items/bulk-update-debug")
+async def bulk_update_debug(request):
+
+    body = await request.json()
+
+    print("========== RAW BODY ==========")
+    print(body)
+
+    return {"ok": True}
+
