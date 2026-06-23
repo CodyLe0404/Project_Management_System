@@ -79,4 +79,28 @@ export async function saveProjectItems(items) {
   return await response.json()
 }
 
+export async function saveProjectItemss(items) {
+  
+  const response = await fetch(
+    `${API_BASE}/project-items/bulk-update-debug`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(items)
+    }
+  )
+
+  if (!response.ok) {
+
+    const text = await response.text()
+
+    throw new Error(
+      `Failed to save project items: ${response.status} ${text}`
+    )
+  }
+
+  return await response.json()
+}
 

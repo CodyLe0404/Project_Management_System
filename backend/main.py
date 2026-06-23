@@ -143,7 +143,7 @@ def create_project(payload: ProjectPayload, conn: pyodbc.Connection = Depends(ge
         )
 
         project_id = payload.general['no']
-
+        task_no = payload.general['taskNo']
         rows = []
         for item in payload.items:
             # Safe boundary check for empty strings
@@ -152,6 +152,7 @@ def create_project(payload: ProjectPayload, conn: pyodbc.Connection = Depends(ge
                 for subtask in subtasks_raw.strip().split('\n'):
                     rows.append((
                         project_id,
+                        task_no,
                         item['main_task'],
                         subtask.strip(),
                         item['qty'],
@@ -161,8 +162,8 @@ def create_project(payload: ProjectPayload, conn: pyodbc.Connection = Depends(ge
         if rows:
             cursor.executemany(
                 """
-                INSERT INTO [Design_System].[dbo].[Project_Items] (project_id, main_task, sub_task, qty, budget, active_flag, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, 1, getdate(), getdate())
+                INSERT INTO [Design_System].[dbo].[DS_PM_Item] (project_id, task_no, main_task, sub_task, qty, budget, active_flag, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, 1, getdate(), getdate())
                 """,
                 rows
             )
@@ -188,14 +189,14 @@ def get_project_details(conn: pyodbc.Connection = Depends(get_db_connection)):
         cursor.execute("""
             SELECT
                 p.id, p.project_id, p.project_number, p.project_name,
-                pi.id as item_id, pi.main_task, pi.sub_task, pi.qty, pi.budget,
+                pi.item_id, pi.task_no, pi.main_task, pi.sub_task, pi.qty, pi.budget,
                 pi.assignee, pi.[percent], pi.status,
                 pi.plan_start, pi.plan_end, pi.actual_start, pi.actual_end,
                 pi.actual_cost, pi.remark
             FROM [Design_System].[dbo].[Project] p
-            JOIN [Design_System].[dbo].[Project_Items] pi ON p.project_id = pi.project_id
+            JOIN [Design_System].[dbo].[DS_PM_Item] pi ON p.project_id = pi.project_id
             WHERE p.active_flag = 1
-            ORDER BY p.project_id, p.project_number, pi.id
+            ORDER BY p.project_id, p.project_number, pi.id_item
         """)
 
         columns = [col[0] for col in cursor.description]
@@ -214,7 +215,7 @@ def get_project_summary(conn: pyodbc.Connection = Depends(get_db_connection)):
             """
             SELECT p.id, p.project_id, pi.plan_start, pi.plan_end, pi.actual_start, pi.actual_end
                 FROM [Design_System].[dbo].[Project] p
-                LEFT JOIN [Design_System].[dbo].[Project_Items] pi 
+                LEFT JOIN [Design_System].[dbo].[DS_PM_Item] pi 
                     ON p.project_id = pi.project_id
                 ORDER BY p.id
             """
@@ -282,7 +283,7 @@ def bulk_update(items: List[ProjectItemUpdate], conn: pyodbc.Connection = Depend
         for item in items:
             cursor.execute(
                 """
-                UPDATE [Design_System].[dbo].[Project_Items]
+                UPDATE [Design_System].[dbo].[DS_PM_Item]
                 SET assignee=?, plan_start=?, plan_end=?, actual_start=?, actual_end=?, actual_cost=?, remark=?
                 WHERE id=?
                 """,

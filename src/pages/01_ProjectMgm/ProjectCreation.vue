@@ -128,6 +128,7 @@ let idCounter = 1
 const items = ref([
   {
     id: idCounter++,
+    task_no: 1,
     main_task: '',
     qty: '',
     budget: '',
@@ -138,7 +139,15 @@ const items = ref([
 ])
 
 const addItem = () => {
-  items.value.push({ id: idCounter++, main_task: '', qty: '', budget: '', isBudgetEditing: false, subtasks: defaultSubtasks, removable: true })
+  items.value.push({ 
+    id: idCounter++, 
+    task_no: items.value.length + 1,
+    main_task: '', 
+    qty: '', 
+    budget: '', 
+    isBudgetEditing: false, 
+    subtasks: defaultSubtasks, 
+    removable: true })
 }
 
 const removeItem = (index) => {
@@ -223,6 +232,7 @@ const validateForm = () => {
 }
 
 const createAndEmit = async () => {
+  if (isSaving.value) return
   validationError.value = '' // Reset lỗi validation
   saveError.value = ''        // Reset lỗi cũ
   saveSuccess.value = ''      // Reset thông báo thành công cũ
@@ -237,8 +247,9 @@ const createAndEmit = async () => {
   // Tạo clone dữ liệu để chuẩn bị gửi đi
   const payload = {
     general: { ...general },
-    items: items.value.map(i => ({
+    items: items.value.map((i, idx) => ({
       id: i.id,
+      task_no: idx + 1,
       main_task: i.main_task,
       qty: i.qty,
       budget: parseCurrency(i.budget),

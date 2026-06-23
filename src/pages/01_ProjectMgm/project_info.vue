@@ -96,7 +96,7 @@ const calculateAndSave = async () => {
     const source = tableData.value.filter(row => !row.is_header)
     
     const payload = source.map(row => ({
-      item_id: row.item_id,
+      item_id: row.id_item,
 
       assignee: row.assignee || null,
 
@@ -113,6 +113,11 @@ const calculateAndSave = async () => {
 
       remark: row.remark || null
     }))
+    console.log('Source rows:')
+    console.table(source)
+
+    console.log('Payload:')
+    console.log(JSON.stringify(payload, null, 2))
 
     await saveProjectItems(payload)
 
@@ -129,35 +134,37 @@ const calculateAndSave = async () => {
   }
 }
 
+
+
 const loadData = async () => {
   try {
     const rawData = await getProjectsDetails()
 
-    rawData.sort((a, b) => {
-      const projectIdA = a.project_id
-      const projectIdB = b.project_id
-      if (projectIdA !== projectIdB) {
-        return projectIdA > projectIdB ? 1 : -1
-      }
+    // rawData.sort((a, b) => {
+    //   const projectIdA = a.project_id
+    //   const projectIdB = b.project_id
+    //   if (projectIdA !== projectIdB) {
+    //     return projectIdA > projectIdB ? 1 : -1
+    //   }
 
-      const projectNumberA = String(a.project_number ?? '')
-      const projectNumberB = String(b.project_number ?? '')
-      const projectNumberCompare = projectNumberA.localeCompare(projectNumberB, undefined, {
-        numeric: true,
-        sensitivity: 'base'
-      })
-      if (projectNumberCompare !== 0) {
-        return projectNumberCompare
-      }
+    //   const projectNumberA = String(a.project_number ?? '')
+    //   const projectNumberB = String(b.project_number ?? '')
+    //   const projectNumberCompare = projectNumberA.localeCompare(projectNumberB, undefined, {
+    //     numeric: true,
+    //     sensitivity: 'base'
+    //   })
+    //   if (projectNumberCompare !== 0) {
+    //     return projectNumberCompare
+    //   }
 
-      const itemIdA = a.item_id
-      const itemIdB = b.item_id
-      if (itemIdA !== itemIdB) {
-        return itemIdA > itemIdB ? 1 : -1
-      }
+    //   const itemIdA = a.item_id
+    //   const itemIdB = b.item_id
+    //   if (itemIdA !== itemIdB) {
+    //     return itemIdA > itemIdB ? 1 : -1
+    //   }
 
-      return 0
-    })
+    //   return 0
+    // })
 
     tableData.value = buildProjectRows(rawData || [])
 
@@ -189,6 +196,7 @@ const loadData = async () => {
           'No',
           'Project Number',
           'Project Name',
+          'Task No',
           'Main Task',
           'Sub Task',
           'Qty',
@@ -233,6 +241,11 @@ const loadData = async () => {
           },
           {
             data: 'project_name',
+            readOnly: true,
+            renderer: hideRepeatedRenderer
+          },
+          {
+            data: 'task_no',
             readOnly: true,
             renderer: hideRepeatedRenderer
           },
@@ -566,32 +579,35 @@ function buildProjectRows(rows) {
 
   const result = []
 
-  const sortedGroups = Array.from(grouped.values()).sort((groupA, groupB) => {
-    const firstA = groupA[0]
-    const firstB = groupB[0]
+  // const sortedGroups = Array.from(grouped.values()).sort((groupA, groupB) => {
+  //   const firstA = groupA[0]
+  //   const firstB = groupB[0]
 
-    if (firstA.project_id !== firstB.project_id) {
-      return firstA.project_id > firstB.project_id ? 1 : -1
-    }
+  //   if (firstA.project_id !== firstB.project_id) {
+  //     return firstA.project_id > firstB.project_id ? 1 : -1
+  //   }
 
-    const numberA = String(firstA.project_number ?? '')
-    const numberB = String(firstB.project_number ?? '')
-    const numberCompare = numberA.localeCompare(numberB, undefined, {
-      numeric: true,
-      sensitivity: 'base'
-    })
+  //   const numberA = String(firstA.project_number ?? '')
+  //   const numberB = String(firstB.project_number ?? '')
+  //   const numberCompare = numberA.localeCompare(numberB, undefined, {
+  //     numeric: true,
+  //     sensitivity: 'base'
+  //   })
 
-    return numberCompare
-  })
+  //   return numberCompare
+  // })
 
-  sortedGroups.forEach(projectRows => {
-    projectRows.sort((a, b) => {
-      if (a.item_id !== b.item_id) {
-        return a.item_id > b.item_id ? 1 : -1
-      }
-      return 0
-    })
+  // sortedGroups.forEach(projectRows => {
+  //   projectRows.sort((a, b) => {
+  //     if (a.item_id !== b.item_id) {
+  //       return a.item_id > b.item_id ? 1 : -1
+  //     }
+  //     return 0
+  //   })
+  const currentGroups = Array.from(grouped.values())
 
+  // 3. Duyệt qua từng nhóm để tính toán dữ liệu hiển thị
+  currentGroups.forEach(projectRows => {
     const firstRow = projectRows[0]
 
     const planStart = getMinDate(
@@ -640,7 +656,7 @@ function buildProjectRows(rows) {
       project_id: firstRow.project_id,
       project_number: firstRow.project_number,
       project_name: firstRow.project_name,
-
+      task_no : firstRow.task_no,
       main_task: firstRow.main_task,
 
       sub_task: 'Switchgears',
@@ -705,6 +721,7 @@ function buildProjectRows(rows) {
 const hideRepeatedColumns = [
   'project_number',
   'project_name',
+  'task_no',
   'main_task',
   'budget',
   'actual_cost',
