@@ -3,7 +3,8 @@
   meta: {
     title: "Machine Info",
     icon: "pi pi-home",
-    permission: ["admin"]
+    permission: ["admin"],
+    "hidden": true
   }
 }
 </route>

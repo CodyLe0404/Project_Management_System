@@ -58,6 +58,24 @@ class ProjectItemUpdate(BaseModel):
     actual_cost: Optional[float] = None
     remark: Optional[str] = None
 
+class LoginRequest(BaseModel):
+    ldapName: str
+    userId: str
+    password: str
+
+
+class UserInfo(BaseModel):
+    userId: str
+    displayName: str
+    email: str
+    userConfig: list[str]
+
+
+class LoginResponse(BaseModel):
+    message: str
+    setUserInfoStatus: int
+    user: UserInfo | None = None
+    
 # --- APP CONFIGURATION ---
 app = FastAPI(title="Project Management Backend")
 
@@ -67,7 +85,7 @@ app.add_middleware(
                    "http://10.13.227.98:8000", 
                    "http://10.13.227.98", 
                    "http://localhost:8000", 
-                   "http://10.13.227.60:8000"],
+                   "http://10.13.226.136:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -306,13 +324,70 @@ def bulk_update(items: List[ProjectItemUpdate], conn: pyodbc.Connection = Depend
     finally:
         cursor.close()
 
-@app.put("/project-items/bulk-update-debug")
-async def bulk_update_debug(request):
 
-    body = await request.json()
+@app.post("/Common/Login", response_model=LoginResponse)
+def login(request: LoginRequest, conn: pyodbc.Connection = Depends(get_db_connection)):
+    encrypted = encrypt_password(request.password)
+    
+    user = check_login(
+        request.userId,
+        encrypted,
+        conn
+    )
 
-    print("========== RAW BODY ==========")
-    print(body)
+    if user is None:
+        return {
+            "message": "Invalid username or password",
+            "setUserInfoStatus": -1,
+            "user": None
+        }
 
-    return {"ok": True}
+    return {
+        "message": "Login successful",
+        "setUserInfoStatus": 0,
+        "user": user
+    }
+
+def encrypt_password(password: str, key: str = "LSE") -> str:
+    encrypted = []
+
+    for i, ch in enumerate(password):
+        xor_value = ord(ch) ^ ord(key[i % len(key)])
+        encrypted.append(f"{xor_value:02X}")
+
+    return ''.join(encrypted)
+
+def decrypt_password(encrypted_hex: str, key: str = "LSE") -> str:
+    result = []
+
+    for i in range(0, len(encrypted_hex), 2):
+        value = int(encrypted_hex[i:i+2], 16)
+        original = value ^ ord(key[(i // 2) % len(key)])
+        result.append(chr(original))
+
+    return ''.join(result)
+    
+def check_login(user_id: str, password: str, conn: pyodbc.Connection):
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute("""EXEC DS_PM_Check_User_Login ?, ?""",user_id,password)
+        row = cursor.fetchone()
+
+        cursor.execute("EXEC DS_PM_Get_Permission_Codes ?", row.permission_id)
+        get_per = cursor.fetchone()
+        
+        if not row or not get_per:
+            return None
+        
+        return {
+            "userId": row.username,
+            "displayName": row.fullname,
+            "email": row.email,
+            "userConfig": get_per.permission_codes.split(';') if get_per.permission_codes else []
+        }
+
+    finally:
+        cursor.close()
 

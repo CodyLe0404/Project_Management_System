@@ -21,7 +21,7 @@
         <form @submit.prevent="handleLogin" class="flex flex-col gap-4 mt-4">
             <div class="flex flex-col gap-1">
                 <label for="userid" class="text-sm font-medium text-surface-700 dark:text-surface-300">User ID</label>
-                <InputText id="userid" v-model="userId" placeholder="e.g. tfa" class="w-full" :invalid="submitted && !userId" />
+                <InputText id="userid" v-model="userId" placeholder="New Employee ID" class="w-full" :invalid="submitted && !userId" />
                 <small v-if="submitted && !userId" class="text-red-500">User ID is required.</small>
             </div>
             

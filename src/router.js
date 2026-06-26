@@ -11,26 +11,26 @@ export const router = createRouter({
 })
 
 // Navigation Guard
-// router.beforeEach((to, from, next) => {
-//     const authStore = useAuthStore();
+router.beforeEach((to, from, next) => {
+    const authStore = useAuthStore();
 
-//     // 1. Check Auth requirement
-//     if (to.path !== '/login' && !authStore.isAuthenticated) {
-//         return next('/login');
-//     }
+    // 1. Check Auth requirement
+    if (to.path !== '/login' && !authStore.isAuthenticated) {
+        return next('/login');
+    }
 
-//     // 2. Prevent logged-in users from visiting login
-//     if (to.path === '/login' && authStore.isAuthenticated) {
-//         return next('/');
-//     }
+    // 2. Prevent logged-in users from visiting login
+    if (to.path === '/login' && authStore.isAuthenticated) {
+        return next('/');
+    }
 
-//     // 3. Check specific permission
-//     if (to.meta.permission) {
-//         if (!authStore.hasPermission(to.meta.permission)) {
-//             // User lacks permission -> Redirect to 403
-//             return next('/403');
-//         }
-//     }
+    // 3. Check specific permission
+    if (to.meta.permission) {
+        if (!authStore.hasPermission(to.meta.permission)) {
+            // User lacks permission -> Redirect to 403
+            return next('/403');
+        }
+    }
 
-//     next();
-// });
+    next();
+});
