@@ -79,7 +79,8 @@ export const useAuthStore = defineStore('auth', () => {
             }
         }
 
-        const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://10.13.226.136:8000';
+        // const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://10.13.227.98:8000';
+        const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://10.13.227.228:8000';
         try {
             const response = await fetch(`${API_URL}/Common/Login`, {
                 method: 'POST',

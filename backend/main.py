@@ -1,10 +1,43 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Any, Optional, List, Generator
 from datetime import datetime
 from contextlib import contextmanager
-import pyodbc
+import pyodbc, time
+import logging
+from logging.handlers import RotatingFileHandler
+
+# -- CONFIG LOG TRACKING --
+# Tạo file log lưu tại thư mục hiện tại, tối đa 5MB/file, giữ lại tối đa 5 file backup
+log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+log_handler = RotatingFileHandler('api_access.log', maxBytes=5*1024*1024, backupCount=5, encoding='utf-8')
+log_handler.setFormatter(log_formatter)
+
+logger = logging.getLogger("API_Logger")
+logger.setLevel(logging.INFO)
+logger.addHandler(log_handler)
+
+# --- APP CONFIGURATION ---
+app = FastAPI(title="Project Management Backend")
+
+# Middleware ghi nhận log chi tiết cho mỗi Request
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    
+    # Lấy IP của máy gọi tới (Xử lý cả trường hợp đi qua Proxy/Load Balancer nếu có)
+    client_ip = request.headers.get("x-forwarded-for") or request.client.host
+    
+    response = await call_next(request)
+    
+    process_time = (time.time() - start_time) * 1000
+    formatted_process_time = f"{process_time:.2f}ms"
+    
+    # Ghi log: Thời gian, IP, Method, URL, Status Code, Thời gian xử lý
+    logger.info(f"IP: {client_ip} | Method: {request.method} | Path: {request.url.path} | Status: {response.status_code} | Duration: {formatted_process_time}")
+    
+    return response
 
 
 # --- DATABASE CONNECTION UTILITY ---
@@ -50,6 +83,7 @@ class ProjectPayload(BaseModel):
 
 class ProjectItemUpdate(BaseModel):
     item_id: int
+    user_id: str
     assignee: Optional[str] = None
     plan_start: Optional[str] = None
     plan_end: Optional[str] = None
@@ -62,6 +96,12 @@ class LoginRequest(BaseModel):
     ldapName: str
     userId: str
     password: str
+
+
+class ChangePasswordRequest(BaseModel):
+    userId: str
+    currentPassword: str
+    newPassword: str
 
 
 class UserInfo(BaseModel):
@@ -85,7 +125,7 @@ app.add_middleware(
                    "http://10.13.227.98:8000", 
                    "http://10.13.227.98", 
                    "http://localhost:8000", 
-                   "http://10.13.226.136:8000"],
+                   "http://10.13.227.228:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -122,6 +162,53 @@ def get_project_status(
         return 'On Time'
     return 'Not yet start'
 
+
+def encrypt_password(password: str, key: str = "LSE") -> str:
+    encrypted = []
+
+    for i, ch in enumerate(password):
+        xor_value = ord(ch) ^ ord(key[i % len(key)])
+        encrypted.append(f"{xor_value:02X}")
+
+    return ''.join(encrypted)
+
+def decrypt_password(encrypted_hex: str, key: str = "LSE") -> str:
+    result = []
+
+    for i in range(0, len(encrypted_hex), 2):
+        value = int(encrypted_hex[i:i+2], 16)
+        original = value ^ ord(key[(i // 2) % len(key)])
+        result.append(chr(original))
+
+    return ''.join(result)
+    
+def check_login(user_id: str, password: str, conn: pyodbc.Connection):
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute("""EXEC DS_PM_Check_User_Login ?, ?""",user_id,password)
+        row = cursor.fetchone()
+
+        if not row:
+            return None
+        
+        cursor.execute("EXEC DS_PM_Get_Permission_Codes ?", row.permission_id)
+        get_per = cursor.fetchone()
+        
+        if not get_per:
+            return None
+        
+        return {
+            "userId": row.username,
+            "displayName": row.fullname,
+            "email": row.email,
+            "userConfig": get_per.permission_codes.split(';') if get_per.permission_codes else []
+        }
+
+    finally:
+        cursor.close()
+        
 # --- API ENDPOINTS ---
 
 @app.get("/testconnection")
@@ -151,17 +238,20 @@ def create_project(payload: ProjectPayload, conn: pyodbc.Connection = Depends(ge
     try:
         cursor.execute(
             """
-            INSERT INTO [Design_System].[dbo].[DS_PM_Project] (project_id, project_number, project_name, active_flag, created_at, updated_at)
-            VALUES (?, ?, ?, 1, getdate(), getdate())
+            INSERT INTO [Design_System].[dbo].[DS_PM_Project] 
+            (project_id, project_number, project_name, active_flag, created_at, updated_at, create_by)
+            VALUES (?, ?, ?, 1, getdate(), getdate(), ?)
             """,
             (
                 payload.general['no'],
                 payload.general['projectNumber'],
-                payload.general['projectName']
+                payload.general['projectName'],
+                payload.general['userId']
             )
         )
 
         project_id = payload.general['no']
+        user_id = payload.general['userId']
         rows = []
         for item in payload.items:
             # Safe boundary check for empty strings
@@ -174,14 +264,16 @@ def create_project(payload: ProjectPayload, conn: pyodbc.Connection = Depends(ge
                         item['main_task'],
                         subtask.strip(),
                         item['qty'],
-                        item['budget']
+                        item['budget'],
+                        user_id
                     ))
 
         if rows:
             cursor.executemany(
                 """
-                INSERT INTO [Design_System].[dbo].[DS_PM_Item] (project_id, task_no, main_task, sub_task, qty, budget, active_flag, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, 1, getdate(), getdate())
+                INSERT INTO [Design_System].[dbo].[DS_PM_Item] 
+                (project_id, task_no, main_task, sub_task, qty, budget, active_flag, created_at, updated_at, update_by)
+                VALUES (?, ?, ?, ?, ?, ?, 1, getdate(), getdate(), ?)
                 """,
                 rows
             )
@@ -303,13 +395,13 @@ def bulk_update(items: List[ProjectItemUpdate], conn: pyodbc.Connection = Depend
             cursor.execute(
                 """
                 UPDATE [Design_System].[dbo].[DS_PM_Item]
-                SET assignee=?, plan_start=?, plan_end=?, actual_start=?, actual_end=?, actual_cost=?, remark=?
+                SET assignee=?, plan_start=?, plan_end=?, actual_start=?, actual_end=?, actual_cost=?, remark=?, updated_at=getdate(), update_by=?
                 WHERE id_item=?
                 """,
                 (
                     item.assignee, item.plan_start, item.plan_end,
                     item.actual_start, item.actual_end, item.actual_cost,
-                    item.remark, item.item_id
+                    item.remark, item.user_id, item.item_id
                 )
             )
 
@@ -348,46 +440,33 @@ def login(request: LoginRequest, conn: pyodbc.Connection = Depends(get_db_connec
         "user": user
     }
 
-def encrypt_password(password: str, key: str = "LSE") -> str:
-    encrypted = []
-
-    for i, ch in enumerate(password):
-        xor_value = ord(ch) ^ ord(key[i % len(key)])
-        encrypted.append(f"{xor_value:02X}")
-
-    return ''.join(encrypted)
-
-def decrypt_password(encrypted_hex: str, key: str = "LSE") -> str:
-    result = []
-
-    for i in range(0, len(encrypted_hex), 2):
-        value = int(encrypted_hex[i:i+2], 16)
-        original = value ^ ord(key[(i // 2) % len(key)])
-        result.append(chr(original))
-
-    return ''.join(result)
-    
-def check_login(user_id: str, password: str, conn: pyodbc.Connection):
-
+@app.post("/changeuserpw")
+def change_user_password(request: ChangePasswordRequest, conn: pyodbc.Connection = Depends(get_db_connection)):
+    current_pw = encrypt_password(request.currentPassword)
+    new_pw = encrypt_password(request.newPassword)
+    cursor = conn.cursor()
     try:
-        cursor = conn.cursor()
+        # Execute the stored procedure and capture output values
+        result = cursor.execute("EXEC USP_DS_PM_ChangeUserPassword ?, ?, ?", request.userId, current_pw, new_pw)
 
-        cursor.execute("""EXEC DS_PM_Check_User_Login ?, ?""",user_id,password)
-        row = cursor.fetchone()
+        row = result.fetchone()
+        if row is None or len(row) < 2:
+            raise HTTPException(status_code=500, detail="Stored procedure did not return expected response.")
 
-        cursor.execute("EXEC DS_PM_Get_Permission_Codes ?", row.permission_id)
-        get_per = cursor.fetchone()
-        
-        if not row or not get_per:
-            return None
-        
+        status = int(row[0])
+        message = str(row[1])
+
+        if status == 1:
+            conn.commit()
+
         return {
-            "userId": row.username,
-            "displayName": row.fullname,
-            "email": row.email,
-            "userConfig": get_per.permission_codes.split(';') if get_per.permission_codes else []
+            "status": status,
+            "message": message
         }
-
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()
+
 

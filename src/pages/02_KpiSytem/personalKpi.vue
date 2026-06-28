@@ -2,7 +2,8 @@
 {
   meta: {
     title: "KPI Cá Nhân",
-    icon: "pi pi-user"
+    icon: "pi pi-user",
+    permission: ["DS_PMS_PK"],
   }
 }
 </route>

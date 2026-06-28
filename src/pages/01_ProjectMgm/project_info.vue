@@ -2,7 +2,8 @@
 {
   meta: {
     title: "Thông Tin Dự Án",
-    icon: "pi pi-objects-column"
+    icon: "pi pi-objects-column",
+    permission: ["DS_PMS_PI"],
   }
 }
 </route>
@@ -74,7 +75,11 @@ import {
   saveProjectItems
 } from '../../services/projectService'
 
+import { useAuthStore } from '../../stores/auth';
+
 registerAllModules()
+
+const authStore = useAuthStore();
 
 const hotContainer = ref(null)
 const searchInput = ref(null)
@@ -84,6 +89,7 @@ const searchQuery = ref('')
 const isSaving = ref(false)
 
 let hot = null
+const changedRows = new Set()
 
 const calculateAndSave = async () => {
   if (isSaving.value) return
@@ -91,13 +97,20 @@ const calculateAndSave = async () => {
   try {
     if (!hot) return
 
+    if (!changedRows.size) {
+      alert('No changes to save')
+      return
+    }
+
     isSaving.value = true
 
-    const source = tableData.value.filter(row => !row.is_header)
+    const source = tableData.value.filter(
+      row => !row.is_header && changedRows.has(row.id_item)
+    )
     
     const payload = source.map(row => ({
       item_id: row.id_item,
-
+      user_id: authStore.user.userId,
       assignee: row.assignee || null,
 
       plan_start: row.plan_start || null,
@@ -111,17 +124,18 @@ const calculateAndSave = async () => {
           ? null
           : Number(row.actual_cost),
 
-      remark: row.remark || null
+      remark: row.remark || ''
     }))
-    console.log('Source rows:')
-    console.table(source)
+    // console.log('Source rows:')
+    // console.table(source)
 
-    console.log('Payload:')
-    console.log(JSON.stringify(payload, null, 2))
+    // console.log('Payload:')
+    // console.log(JSON.stringify(payload, null, 2))
 
     await saveProjectItems(payload)
 
     alert('Saved successfully')
+    changedRows.clear()
     
     await loadData()
   }
@@ -167,6 +181,7 @@ const loadData = async () => {
     // })
 
     tableData.value = buildProjectRows(rawData || [])
+    changedRows.clear()
 
     if (hot) {
       hot.destroy()
@@ -355,27 +370,42 @@ const loadData = async () => {
 
           return cellProperties
         },
-        afterChange(changes, source) {
-          if (!changes || source === 'loadData') return
+        afterChange(changes, source) {    // Triggered automatically after any cell value changes in Handsontable
+          if (!changes || source === 'loadData') return   // Ignore if there are no changes or if the changes were caused by loadData()
 
-          changes.forEach(change => {
-            const [row, prop, oldValue, newValue] = change
+          changes.forEach(change => {     // Loop through every changed cell
+            const [row, prop, oldValue, newValue] = change    // row = row index of the edited cell
+            const rowData = this.getSourceDataAtRow(row)      // Get the complete data object of the edited row
 
-            if (prop === 'actual_cost' && oldValue !== newValue) {
-              const rowData = this.getSourceDataAtRow(row)
+            if (!rowData) return
 
-              // only react when user changed header actual_cost
-              if (rowData && rowData.is_header) {
-                const nextRow = row + 1
-                const nextRowData = this.getSourceDataAtRow(nextRow)
-
+            // Check whether the edited row is a header/summary row
+            if (rowData.is_header) {    
+              // Only process when: 1. The edited column is "actual_cost" and 2. The value has actually changed
+              if (prop === 'actual_cost' && oldValue !== newValue) {
+                const nextRow = row + 1     // Calculate the row immediately below the header
+                const nextRowData = this.getSourceDataAtRow(nextRow)    // Get data of the next row
+                
+                // Ensure the next row exists and is NOT another header row
                 if (nextRowData && !nextRowData.is_header) {
-                  // copy value into the row below
+                  // Copy the header's actual_cost value into the detail row below
                   this.setDataAtRowProp(nextRow, 'actual_cost', newValue)
+
+                  // If the detail row has a valid item ID, mark it as modified so it can be saved later
+                  if (nextRowData.id_item) {
+                    changedRows.add(nextRowData.id_item)
+                  }
                 }
 
+                // Update any summary data or calculations related to this header
                 syncSummaryActualCost(rowData, newValue)
               }
+              return
+            }
+
+            // For normal row if the row has an item ID and the value really changed, record this row as modified
+            if (rowData.id_item && oldValue !== newValue) {
+              changedRows.add(rowData.id_item)
             }
           })
         },

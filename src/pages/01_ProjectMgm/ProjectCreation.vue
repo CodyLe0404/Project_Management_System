@@ -2,7 +2,8 @@
 {
   meta: {
     title: "Thiết Lập Dự Án",
-    icon: "pi pi-file-plus"
+    icon: "pi pi-file-plus",
+    permission: ["DS_PMS_PC"],
   }
 }
 </route>
@@ -102,6 +103,9 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { createProject } from '../../services/projectService'
+import { useAuthStore } from '../../stores/auth';
+
+const authStore = useAuthStore();
 
 const defaultSubtasks = `DE_SLD and Outline_diagram_R0
 DE_Bill Of Material (LT)_R0
@@ -118,7 +122,7 @@ DM_DWG_Drawing for production_R0
 DM_Bill Of Material(Final)_R0
 DM_Final drawing_R0`
 
-const general = reactive({ no: '', projectNumber: '', projectName: '' })
+const general = reactive({ no: '', projectNumber: '', projectName: '', userId: authStore.user.userId })
 const isSaving = ref(false)
 const saveError = ref('')
 const saveSuccess = ref('')
