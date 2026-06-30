@@ -110,6 +110,7 @@ const calculateAndSave = async () => {
     
     const payload = source.map(row => ({
       item_id: row.id_item,
+      main_task: row.main_task || '',
       sub_task: row.sub_task || '',
       user_id: authStore.user.userId,
       assignee: row.assignee || null,
@@ -360,9 +361,11 @@ const loadData = async () => {
           if (rowData?.is_header) {
             cellProperties.className = 'project-header-row'
 
-            // make header read-only except for 'actual_cost'
             const prop = this.instance.colToProp(col)
-            if (prop !== 'actual_cost') {
+            // Allow editing of both 'main_task' and 'actual_cost' in the header row
+            if (prop === 'main_task') {
+              cellProperties.readOnly = false
+            } else if (prop !== 'actual_cost') {
               cellProperties.readOnly = true
             }
           }
@@ -380,6 +383,21 @@ const loadData = async () => {
 
             // Check whether the edited row is a header/summary row
             if (rowData.is_header) {    
+              // Handle main_task change propagation from header to detail rows
+              if (prop === 'main_task' && oldValue !== newValue) {
+                let nextRow = row + 1
+                while (true) {
+                  const nextRowData = this.getSourceDataAtRow(nextRow)
+                  if (!nextRowData || nextRowData.is_header) break
+                  
+                  this.setDataAtRowProp(nextRow, 'main_task', newValue)
+                  if (nextRowData.id_item) {
+                    changedRows.add(nextRowData.id_item)
+                  }
+                  nextRow++
+                }
+              }
+
               // Only process when: 1. The edited column is "actual_cost" and 2. The value has actually changed
               if (prop === 'actual_cost' && oldValue !== newValue) {
                 const nextRow = row + 1     // Calculate the row immediately below the header

@@ -83,6 +83,7 @@ class ProjectPayload(BaseModel):
 
 class ProjectItemUpdate(BaseModel):
     item_id: int
+    main_task: Optional[str] = None
     sub_task: str
     user_id: str
     assignee: Optional[str] = None
@@ -261,7 +262,7 @@ def create_project(payload: ProjectPayload, conn: pyodbc.Connection = Depends(ge
                 for subtask in subtasks_raw.strip().split('\n'):
                     rows.append((
                         project_id,
-                        item['task_no'],
+                        item['task_name'],
                         item['main_task'],
                         subtask.strip(),
                         item['qty'],
@@ -396,11 +397,11 @@ def bulk_update(items: List[ProjectItemUpdate], conn: pyodbc.Connection = Depend
             cursor.execute(
                 """
                 UPDATE [Design_System].[dbo].[DS_PM_Item]
-                SET sub_task=?, assignee=?, plan_start=?, plan_end=?, actual_start=?, actual_end=?, actual_cost=?, remark=?, updated_at=getdate(), update_by=?
+                SET main_task=?, sub_task=?, assignee=?, plan_start=?, plan_end=?, actual_start=?, actual_end=?, actual_cost=?, remark=?, updated_at=getdate(), update_by=?
                 WHERE id_item=?
                 """,
                 (
-                    item.sub_task, item.assignee, item.plan_start, item.plan_end,
+                    item.main_task, item.sub_task, item.assignee, item.plan_start, item.plan_end,
                     item.actual_start, item.actual_end, item.actual_cost,
                     item.remark, item.user_id, item.item_id
                 )

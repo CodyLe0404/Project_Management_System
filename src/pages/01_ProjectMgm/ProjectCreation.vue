@@ -43,16 +43,16 @@
 
         <div class="space-y-4">
             <div v-for="(item, idx) in items" :key="item.id" class="border rounded-2xl p-4 bg-white shadow-sm relative">
-            <div class="flex items-center justify-between gap-3 mb-4">
-                <div class="text-sm font-semibold text-slate-800">Task {{ idx + 1 }}</div>
-                <button v-if="item.removable" @click="removeItem(idx)" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100 hover:text-red-800" title="Xóa hạng mục">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-4 w-4 fill-current">
-                    <path d="M3 6h18v2H3V6zm3 3h12l-1.5 12.5c-.1.7-.7 1.2-1.4 1.2H8.9c-.7 0-1.3-.5-1.4-1.2L6 9zm5 2v8h2v-8h-2zm-4 0v8h2v-8H7zm8 0v8h2v-8h-2zM9 4V3h6v1h5v2H4V4h5z"/>
-                </svg>
-                </button>
-            </div>
-
-            <div class="grid gap-4 lg:grid-cols-[1.5fr_0.85fr_1.2fr] items-end">
+            <div class="grid gap-4 grid-cols-1 lg:grid-cols-[0.8fr_1.8fr_1.0fr_1.2fr_auto] items-end">
+              <div>
+                <label class="block text-sm text-slate-600 mb-1">Tên hạng mục</label>
+                <input 
+                  v-model="item.task_name" 
+                  type="text" 
+                  :placeholder="'Task ' + (idx + 1)" 
+                  class="w-full border border-slate-300 rounded-2xl px-3 py-2 text-sm text-slate-900 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100" 
+                />
+              </div>
               <div>
                 <label class="block text-sm text-slate-600 mb-1">Hạng mục chính</label>
                 <input v-model="item.main_task" type="text" placeholder="Ví dụ: LV" class="w-full border border-slate-300 rounded-2xl px-3 py-2 text-sm text-slate-900 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100" />
@@ -72,6 +72,14 @@
                   placeholder="0"
                   class="w-full border border-slate-300 rounded-2xl px-3 py-2 text-sm text-slate-900 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100"
                 />
+              </div>
+              <div class="flex justify-end">
+                <button v-if="item.removable" @click="removeItem(idx)" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100 hover:text-red-800" title="Xóa hạng mục">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-4 w-4 fill-current">
+                    <path d="M3 6h18v2H3V6zm3 3h12l-1.5 12.5c-.1.7-.7 1.2-1.4 1.2H8.9c-.7 0-1.3-.5-1.4-1.2L6 9zm5 2v8h2v-8h-2zm-4 0v8h2v-8H7zm8 0v8h2v-8h-2zM9 4V3h6v1h5v2H4V4h5z"/>
+                  </svg>
+                </button>
+                <div v-else class="hidden lg:block h-9 w-9"></div>
               </div>
             </div>
             <div class="mt-4">
@@ -133,6 +141,7 @@ const items = ref([
   {
     id: idCounter++,
     task_no: 1,
+    task_name: '',
     main_task: '',
     qty: '',
     budget: '',
@@ -146,12 +155,14 @@ const addItem = () => {
   items.value.push({ 
     id: idCounter++, 
     task_no: items.value.length + 1,
+    task_name: '',
     main_task: '', 
     qty: '', 
     budget: '', 
     isBudgetEditing: false, 
     subtasks: defaultSubtasks, 
-    removable: true })
+    removable: true 
+  })
 }
 
 const removeItem = (index) => {
@@ -220,14 +231,15 @@ const validateForm = () => {
   // Kiểm tra từng item
   for (let i = 0; i < items.value.length; i++) {
     const item = items.value[i]
+    const displayName = item.task_name?.trim() || `Task ${i + 1}`
     
     if (!item.main_task.trim()) {
-      validationError.value = `⚠️ Vui lòng nhập Hạng mục chính cho Task ${i + 1}`
+      validationError.value = `⚠️ Vui lòng nhập Hạng mục chính cho ${displayName}`
       return false
     }
 
     if (!item.budget.trim()) {
-      validationError.value = `⚠️ Vui lòng nhập Ngân sách (Budget) cho Task ${i + 1}`
+      validationError.value = `⚠️ Vui lòng nhập Ngân sách (Budget) cho ${displayName}`
       return false
     }
   }
@@ -254,6 +266,7 @@ const createAndEmit = async () => {
     items: items.value.map((i, idx) => ({
       id: i.id,
       task_no: idx + 1,
+      task_name: i.task_name ? i.task_name.trim() : '',
       main_task: i.main_task,
       qty: i.qty,
       budget: parseCurrency(i.budget),
