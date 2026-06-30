@@ -2,7 +2,7 @@
 import axios from 'axios'
 
 // const API_BASE = import.meta.env.VITE_API_BASE || "http://10.13.227.98:8000";
-const API_BASE = import.meta.env.VITE_API_BASE || "http://10.13.227.228:8000";
+const API_BASE = import.meta.env.VITE_API_BASE || "http://10.13.227.119:8000";
 
 let cachedProjects = null
 let cachedProjectDetails = {}

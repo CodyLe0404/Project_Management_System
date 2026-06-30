@@ -83,6 +83,7 @@ class ProjectPayload(BaseModel):
 
 class ProjectItemUpdate(BaseModel):
     item_id: int
+    sub_task: str
     user_id: str
     assignee: Optional[str] = None
     plan_start: Optional[str] = None
@@ -125,7 +126,7 @@ app.add_middleware(
                    "http://10.13.227.98:8000", 
                    "http://10.13.227.98", 
                    "http://localhost:8000", 
-                   "http://10.13.227.228:8000"],
+                   "http://10.13.227.119:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -395,11 +396,11 @@ def bulk_update(items: List[ProjectItemUpdate], conn: pyodbc.Connection = Depend
             cursor.execute(
                 """
                 UPDATE [Design_System].[dbo].[DS_PM_Item]
-                SET assignee=?, plan_start=?, plan_end=?, actual_start=?, actual_end=?, actual_cost=?, remark=?, updated_at=getdate(), update_by=?
+                SET sub_task=?, assignee=?, plan_start=?, plan_end=?, actual_start=?, actual_end=?, actual_cost=?, remark=?, updated_at=getdate(), update_by=?
                 WHERE id_item=?
                 """,
                 (
-                    item.assignee, item.plan_start, item.plan_end,
+                    item.sub_task, item.assignee, item.plan_start, item.plan_end,
                     item.actual_start, item.actual_end, item.actual_cost,
                     item.remark, item.user_id, item.item_id
                 )

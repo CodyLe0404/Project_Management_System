@@ -110,6 +110,7 @@ const calculateAndSave = async () => {
     
     const payload = source.map(row => ({
       item_id: row.id_item,
+      sub_task: row.sub_task || '',
       user_id: authStore.user.userId,
       assignee: row.assignee || null,
 
@@ -147,8 +148,6 @@ const calculateAndSave = async () => {
     isSaving.value = false
   }
 }
-
-
 
 const loadData = async () => {
   try {
@@ -271,7 +270,7 @@ const loadData = async () => {
           },
           {
             data: 'sub_task',
-            readOnly: true
+            // readOnly: true
           },
           {
             data: 'qty'
