@@ -183,6 +183,9 @@ const loadData = async () => {
     tableData.value = buildProjectRows(rawData || [])
     changedRows.clear()
 
+    const projectNameWidth = getAutoFitColumnWidth(tableData.value, 'project_name')
+    const mainTaskWidth = getAutoFitColumnWidth(tableData.value, 'main_task')
+
     if (hot) {
       hot.destroy()
     }
@@ -257,7 +260,8 @@ const loadData = async () => {
           {
             data: 'project_name',
             readOnly: true,
-            renderer: hideRepeatedRenderer
+            renderer: hideRepeatedRenderer,
+            width: projectNameWidth
           },
           {
             data: 'task_no',
@@ -267,7 +271,8 @@ const loadData = async () => {
           {
             data: 'main_task',
             readOnly: true,
-            renderer: hideRepeatedRenderer
+            renderer: hideRepeatedRenderer,
+            width: mainTaskWidth
           },
           {
             data: 'sub_task',
@@ -454,6 +459,25 @@ function getDisplayedRows() {
       projectName.includes(query)
     )
   })
+}
+
+function getAutoFitColumnWidth(rows, field, minWidth = 180, maxWidth = 420) {
+  const canvas = document.createElement('canvas')
+  const context = canvas.getContext('2d')
+  context.font = '14px Inter, sans-serif'
+
+  const headerLabel = field === 'project_name' ? 'Project Name' : 'Main Task'
+  const values = rows
+    .map(row => String(row?.[field] ?? ''))
+    .concat(headerLabel)
+
+  const maxTextWidth = values.reduce((max, value) => {
+    const width = context.measureText(value).width
+    return width > max ? width : max
+  }, 0)
+
+  const calculatedWidth = Math.ceil(maxTextWidth + 32)
+  return Math.min(Math.max(calculatedWidth, minWidth), maxWidth)
 }
 
 function getStatusColumnWidth(rows) {

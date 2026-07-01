@@ -79,6 +79,45 @@ export async function saveProjectItems(items) {
   return await response.json()
 }
 
+export async function deleteProjectRowData({ itemIds, userId }) {
+  const response = await fetch(
+    `${API_BASE}/project-items/delete`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ item_ids: itemIds, user_id: userId })
+    }
+  )
+
+  if (!response.ok) {
+    const text = await response.text()
+    throw new Error(`Failed to delete project row: ${response.status} ${text}`)
+  }
+
+  return await response.json()
+}
+
+export async function insertProjectRowData(payload) {
+  const response = await fetch(
+    `${API_BASE}/project-items/insert`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    }
+  )
+
+  if (!response.ok) {
+    const text = await response.text()
+    throw new Error(`Failed to insert project row: ${response.status} ${text}`)
+  }
+
+  return await response.json()
+}
 
 export async function changeUserPassword({ userId, currentPassword, newPassword }) {
   const response = await fetch(

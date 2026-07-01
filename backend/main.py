@@ -94,6 +94,23 @@ class ProjectItemUpdate(BaseModel):
     actual_cost: Optional[float] = None
     remark: Optional[str] = None
 
+class DeleteRowRequest(BaseModel):
+    item_ids: str
+    user_id: str
+
+class InsertRowRequest(BaseModel):
+    user_id: str
+    project_id: Optional[str] = None
+    project_number: str
+    project_name: str
+    task_no: str
+    main_task: str
+    sub_task: Optional[str] = None
+    qty: Optional[float] = None
+    budget: Optional[float] = None
+    actual_cost: Optional[float] = None
+    assignee: Optional[str] = None
+
 class LoginRequest(BaseModel):
     ldapName: str
     userId: str
@@ -388,6 +405,61 @@ def get_project_summary(conn: pyodbc.Connection = Depends(get_db_connection)):
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()
+
+@app.post("/project-items/delete")
+def delete_project_row(payload: DeleteRowRequest, conn: pyodbc.Connection = Depends(get_db_connection)):
+    cursor = conn.cursor()
+    try:
+        result = cursor.execute(
+            "EXEC SP_DS_PM_Delete_Row_Data ?, ?",
+            payload.item_ids,
+            payload.user_id
+        ).fetchone()
+        conn.commit()
+
+        status = str(result[0]) if result else ''
+        return {
+            "success": status.upper() == 'SUCCESS',
+            "result": status
+        }
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+
+
+@app.post("/project-items/insert")
+def insert_project_row(payload: InsertRowRequest, conn: pyodbc.Connection = Depends(get_db_connection)):
+    cursor = conn.cursor()
+    try:
+        result = cursor.execute(
+            "EXEC SP_DS_PM_Insert_Row_Data ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?",
+            payload.project_id or '',
+            payload.project_number,
+            payload.project_name,
+            payload.task_no,
+            payload.main_task,
+            payload.sub_task or '',
+            payload.qty,
+            payload.budget,
+            payload.actual_cost,
+            payload.assignee or '',
+            payload.user_id
+        ).fetchone()
+        conn.commit()
+
+        status = str(result[0]) if result else ''
+        return {
+            "success": status.upper() == 'SUCCESS',
+            "result": status
+        }
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+
 
 @app.put("/project-items/bulk-update")
 def bulk_update(items: List[ProjectItemUpdate], conn: pyodbc.Connection = Depends(get_db_connection)):
