@@ -1,8 +1,8 @@
 
 import axios from 'axios'
 
-// const API_BASE = import.meta.env.VITE_API_BASE || "http://10.13.227.98:8000";
-const API_BASE = import.meta.env.VITE_API_BASE || "http://10.13.227.119:8000";
+const API_BASE = import.meta.env.VITE_API_BASE || "http://10.13.227.98:8000";
+// const API_BASE = import.meta.env.VITE_API_BASE || "http://10.13.227.119:8000";
 
 let cachedProjects = null
 let cachedProjectDetails = {}
@@ -79,7 +79,8 @@ export async function saveProjectItems(items) {
   return await response.json()
 }
 
-export async function deleteProjectRowData({ itemIds, userId }) {
+export async function deleteProjectRowData(item_id, username) {
+  // console.log('Deleting project row data:', { item_ids: item_id, user_id: username })
   const response = await fetch(
     `${API_BASE}/project-items/delete`,
     {
@@ -87,7 +88,7 @@ export async function deleteProjectRowData({ itemIds, userId }) {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ item_ids: itemIds, user_id: userId })
+      body: JSON.stringify({ item_ids: item_id, user_id: username })
     }
   )
 

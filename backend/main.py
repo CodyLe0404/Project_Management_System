@@ -7,6 +7,7 @@ from contextlib import contextmanager
 import pyodbc, time
 import logging
 from logging.handlers import RotatingFileHandler
+from datetime import date
 
 # -- CONFIG LOG TRACKING --
 # Tạo file log lưu tại thư mục hiện tại, tối đa 5MB/file, giữ lại tối đa 5 file backup
@@ -101,15 +102,17 @@ class DeleteRowRequest(BaseModel):
 class InsertRowRequest(BaseModel):
     user_id: str
     project_id: Optional[str] = None
-    project_number: str
-    project_name: str
-    task_no: str
+    task_no: int
     main_task: str
     sub_task: Optional[str] = None
-    qty: Optional[float] = None
+    qty: Optional[int] = None
     budget: Optional[float] = None
     actual_cost: Optional[float] = None
     assignee: Optional[str] = None
+    plan_start: Optional[date] = None
+    plan_end: Optional[date] = None
+    actual_start: Optional[date] = None
+    actual_end: Optional[date] = None
 
 class LoginRequest(BaseModel):
     ldapName: str
@@ -315,20 +318,7 @@ def create_project(payload: ProjectPayload, conn: pyodbc.Connection = Depends(ge
 def get_project_details(conn: pyodbc.Connection = Depends(get_db_connection)):
     cursor = conn.cursor()
     try:
-        cursor.execute("""
-            SELECT
-                p.id, p.project_id, p.project_number, p.project_name,
-                pi.id_item, pi.task_no, pi.main_task, pi.sub_task, pi.qty, pi.budget,
-                pi.assignee, pi.[percent], pi.status,
-                pi.plan_start, pi.plan_end, pi.actual_start, pi.actual_end,
-                pi.actual_cost, pi.remark
-            FROM [Design_System].[dbo].[DS_PM_Project] p
-            JOIN [Design_System].[dbo].[DS_PM_Item] pi 
-                ON p.project_id = pi.project_id
-            WHERE p.active_flag = 1
-            ORDER BY p.id, p.project_number, pi.id_item
-        """)
-
+        cursor.execute("EXEC [Design_System].[dbo].[USP_PM_Get_Project_Detail]")
         columns = [col[0] for col in cursor.description]
         rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
         return rows
@@ -341,77 +331,71 @@ def get_project_details(conn: pyodbc.Connection = Depends(get_db_connection)):
 def get_project_summary(conn: pyodbc.Connection = Depends(get_db_connection)):
     cursor = conn.cursor()
     try:
-        cursor.execute(
-            """
-            SELECT p.id, p.project_id, pi.plan_start, pi.plan_end, pi.actual_start, pi.actual_end
-                FROM [Design_System].[dbo].[DS_PM_Project] p
-                LEFT JOIN [Design_System].[dbo].[DS_PM_Item] pi 
-                    ON p.project_id = pi.project_id
-                ORDER BY p.id
-            """
-        )
-
-        rows = cursor.fetchall()
-        grouped = {}
-
-        for id, project_id, plan_start, plan_end, actual_start, actual_end in rows:
-            if project_id not in grouped:
-                grouped[project_id] = []
-
-            grouped[project_id].append({
-                'plan_start': parse_datetime(str(plan_start) if plan_start else None),
-                'plan_end': parse_datetime(str(plan_end) if plan_end else None),
-                'actual_start': parse_datetime(str(actual_start) if actual_start else None),
-                'actual_end': parse_datetime(str(actual_end) if actual_end else None)
-            })
-
-        counts = {
-            'total_projects': len(grouped),
-            'completed_projects': 0,
-            'on_going_projects': 0,
-            'ahead_of_schedule_projects': 0,
-            'on_time_projects': 0,
-            'delayed_projects': 0,
-            'not_yet_start_projects': 0,
-            'no_plan_projects': 0
-        }
-
-        for project_rows in grouped.values():
-            plan_start_min = min((row['plan_start'] for row in project_rows if row['plan_start']), default=None)
-            plan_end_max = max((row['plan_end'] for row in project_rows if row['plan_end']), default=None)
-            actual_start_min = min((row['actual_start'] for row in project_rows if row['actual_start']), default=None)
-            actual_end_max = max((row['actual_end'] for row in project_rows if row['actual_end']), default=None)
-
-            status = get_project_status(plan_start_min, plan_end_max, actual_start_min, actual_end_max)
-
-            if status == 'No plan':
-                counts['no_plan_projects'] += 1
-            elif status == 'Not yet start':
-                counts['not_yet_start_projects'] += 1
-            elif status == 'On going':
-                counts['on_going_projects'] += 1
-            elif status == 'Ahead of schedule':
-                counts['ahead_of_schedule_projects'] += 1
-                counts['completed_projects'] += 1
-            elif status == 'On Time':
-                counts['on_time_projects'] += 1
-                counts['completed_projects'] += 1
-            elif status == 'Delay':
-                counts['delayed_projects'] += 1
-                counts['completed_projects'] += 1
-
-        return counts
+        cursor.execute("EXEC [Design_System].[dbo].[USP_PM_Get_Project_Summary]")
+        columns = [col[0] for col in cursor.description]
+        rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()
+    grouped = {}
+
+    for id, project_id, plan_start, plan_end, actual_start, actual_end in rows:
+        if project_id not in grouped:
+            grouped[project_id] = []
+
+        grouped[project_id].append({
+            'plan_start': parse_datetime(str(plan_start) if plan_start else None),
+            'plan_end': parse_datetime(str(plan_end) if plan_end else None),
+            'actual_start': parse_datetime(str(actual_start) if actual_start else None),
+            'actual_end': parse_datetime(str(actual_end) if actual_end else None)
+        })
+
+    counts = {
+        'total_projects': len(grouped),
+        'completed_projects': 0,
+        'on_going_projects': 0,
+        'ahead_of_schedule_projects': 0,
+        'on_time_projects': 0,
+        'delayed_projects': 0,
+        'not_yet_start_projects': 0,
+        'no_plan_projects': 0
+    }
+
+    for project_rows in grouped.values():
+        plan_start_min = min((row['plan_start'] for row in project_rows if row['plan_start']), default=None)
+        plan_end_max = max((row['plan_end'] for row in project_rows if row['plan_end']), default=None)
+        actual_start_min = min((row['actual_start'] for row in project_rows if row['actual_start']), default=None)
+        actual_end_max = max((row['actual_end'] for row in project_rows if row['actual_end']), default=None)
+
+        status = get_project_status(plan_start_min, plan_end_max, actual_start_min, actual_end_max)
+
+        if status == 'No plan':
+            counts['no_plan_projects'] += 1
+        elif status == 'Not yet start':
+            counts['not_yet_start_projects'] += 1
+        elif status == 'On going':
+            counts['on_going_projects'] += 1
+        elif status == 'Ahead of schedule':
+            counts['ahead_of_schedule_projects'] += 1
+            counts['completed_projects'] += 1
+        elif status == 'On Time':
+            counts['on_time_projects'] += 1
+            counts['completed_projects'] += 1
+        elif status == 'Delay':
+            counts['delayed_projects'] += 1
+            counts['completed_projects'] += 1
+
+    return counts
+
 
 @app.post("/project-items/delete")
 def delete_project_row(payload: DeleteRowRequest, conn: pyodbc.Connection = Depends(get_db_connection)):
+    print(payload.item_ids, payload.user_id)
     cursor = conn.cursor()
     try:
         result = cursor.execute(
-            "EXEC SP_DS_PM_Delete_Row_Data ?, ?",
+            "EXEC USP_DS_PM_Delete_Item_Data ?, ?",
             payload.item_ids,
             payload.user_id
         ).fetchone()
@@ -428,33 +412,68 @@ def delete_project_row(payload: DeleteRowRequest, conn: pyodbc.Connection = Depe
     finally:
         cursor.close()
 
-
 @app.post("/project-items/insert")
-def insert_project_row(payload: InsertRowRequest, conn: pyodbc.Connection = Depends(get_db_connection)):
+def insert_project_row(payload: List[InsertRowRequest], conn: pyodbc.Connection = Depends(get_db_connection)):
     cursor = conn.cursor()
-    try:
-        result = cursor.execute(
-            "EXEC SP_DS_PM_Insert_Row_Data ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?",
-            payload.project_id or '',
-            payload.project_number,
-            payload.project_name,
-            payload.task_no,
-            payload.main_task,
-            payload.sub_task or '',
-            payload.qty,
-            payload.budget,
-            payload.actual_cost,
-            payload.assignee or '',
-            payload.user_id
-        ).fetchone()
-        conn.commit()
+    success_count = 0
+    results_summary = []
 
-        status = str(result[0]) if result else ''
+    try:
+        # Lặp qua từng item trong list dữ liệu truyền vào
+        for item in payload:
+            print(
+                "EXEC USP_PM_Insert_Row_Data ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?", 
+                item.project_id, 
+                item.task_no,
+                item.main_task,
+                item.sub_task,
+                item.qty,
+                item.assignee or '',
+                item.budget,
+                item.actual_cost or 0,
+                item.user_id,
+                item.plan_start,
+                item.plan_end,
+                item.actual_start,
+                item.actual_end
+            )
+            cursor.execute(
+            # print(
+                "EXEC USP_PM_Insert_Row_Data ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?", 
+                item.project_id, 
+                item.task_no,
+                item.main_task,
+                item.sub_task,
+                item.qty,
+                item.budget,
+                item.actual_cost or 0,
+                item.assignee or '',
+                item.user_id,
+                item.plan_start,
+                item.plan_end,
+                item.actual_start,
+                item.actual_end
+            )
+            
+            # Lấy kết quả trả về của từng dòng (nếu SP có sinh kết quả)
+            row_result = cursor.fetchone()
+            status = str(row_result[0]) if row_result else 'UNKNOWN'
+            results_summary.append({"task_no": item.task_no, "status": status})
+            
+            if status.upper() == 'SUCCESS':
+                success_count += 1
+
+        # Commit toàn bộ sau khi chạy lỗi/thành công hết vòng lặp
+        conn.commit()
+        print(f"Successfully inserted {success_count}/{len(payload)} rows.")
         return {
-            "success": status.upper() == 'SUCCESS',
-            "result": status
+            "success": success_count == len(payload),
+            "message": f"Successfully inserted {success_count}/{len(payload)} rows.",
+            "details": results_summary
         }
+
     except Exception as e:
+        # Rollback lại toàn bộ nếu có bất kỳ dòng nào bị lỗi hệ thống/DB
         conn.rollback()
         raise HTTPException(status_code=500, detail=str(e))
     finally:

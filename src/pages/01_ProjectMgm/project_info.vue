@@ -72,7 +72,9 @@ import {
 
 import {
   getProjectsDetails,
-  saveProjectItems
+  saveProjectItems,
+  deleteProjectRowData,
+  insertProjectRowData
 } from '../../services/projectService'
 
 import { useAuthStore } from '../../stores/auth';
@@ -90,6 +92,9 @@ const isSaving = ref(false)
 
 let hot = null
 const changedRows = new Set()
+let deletedItemIds = ""
+let insertedRowsToSave = []
+const insertedRowMap = new Map()  // Keep newly inserted rows in a map so their values can be updated immediately as the user edits cells in Handsontable.
 
 const calculateAndSave = async () => {
   if (isSaving.value) return
@@ -97,8 +102,20 @@ const calculateAndSave = async () => {
   try {
     if (!hot) return
 
+    if (deletedItemIds) {
+      await deleteProjectRowData(deletedItemIds, authStore.user.userId)
+      deletedItemIds = ""
+      await loadData()
+    }
+
+    if (insertedRowsToSave.length) {
+      await insertProjectRowData(insertedRowsToSave)
+      insertedRowsToSave = []
+      await loadData()
+    }
+
     if (!changedRows.size) {
-      alert('No changes to save')
+      alert('Saved successfully')
       return
     }
 
@@ -128,11 +145,6 @@ const calculateAndSave = async () => {
 
       remark: row.remark || ''
     }))
-    // console.log('Source rows:')
-    // console.table(source)
-
-    // console.log('Payload:')
-    // console.log(JSON.stringify(payload, null, 2))
 
     await saveProjectItems(payload)
 
@@ -149,39 +161,15 @@ const calculateAndSave = async () => {
     isSaving.value = false
   }
 }
-
 const loadData = async () => {
   try {
+    deletedItemIds = ""
     const rawData = await getProjectsDetails()
-
-    // rawData.sort((a, b) => {
-    //   const projectIdA = a.project_id
-    //   const projectIdB = b.project_id
-    //   if (projectIdA !== projectIdB) {
-    //     return projectIdA > projectIdB ? 1 : -1
-    //   }
-
-    //   const projectNumberA = String(a.project_number ?? '')
-    //   const projectNumberB = String(b.project_number ?? '')
-    //   const projectNumberCompare = projectNumberA.localeCompare(projectNumberB, undefined, {
-    //     numeric: true,
-    //     sensitivity: 'base'
-    //   })
-    //   if (projectNumberCompare !== 0) {
-    //     return projectNumberCompare
-    //   }
-
-    //   const itemIdA = a.item_id
-    //   const itemIdB = b.item_id
-    //   if (itemIdA !== itemIdB) {
-    //     return itemIdA > itemIdB ? 1 : -1
-    //   }
-
-    //   return 0
-    // })
 
     tableData.value = buildProjectRows(rawData || [])
     changedRows.clear()
+    insertedRowsToSave = []
+    insertedRowMap.clear()
 
     const projectNameWidth = getAutoFitColumnWidth(tableData.value, 'project_name')
     const mainTaskWidth = getAutoFitColumnWidth(tableData.value, 'main_task')
@@ -377,6 +365,78 @@ const loadData = async () => {
 
           return cellProperties
         },
+        //id_item of any deleted rows for tracking
+        beforeRemoveRow(index, amount) {
+          const removedIds = []
+          for (let i = 0; i < amount; i++) {
+            const rowIndex = index + i
+            const rowData = this.getSourceDataAtRow(rowIndex)
+
+            if (rowData?.id_item) {
+              removedIds.push(rowData.id_item)
+            }
+          }
+
+          if (removedIds.length) {
+            deletedItemIds = removedIds.join(',')
+          }
+
+          return true
+        },
+        afterCreateRow(index, amount) {
+          const insertedRows = []
+
+          for (let i = 0; i < amount; i++) {
+            const newRowIndex = index + i
+            const previousRow = this.getSourceDataAtRow(newRowIndex - 1)
+            const newRow = this.getSourceDataAtRow(newRowIndex)
+
+            if (previousRow && newRow) {
+              const columnsToCopy = [
+                'project_id',
+                'project_number',
+                'project_name',
+                'task_no',
+                'main_task',
+                'qty',
+                'budget',
+                'actual_cost'
+              ]
+
+              columnsToCopy.forEach(column => {
+                if (previousRow[column] !== undefined) {
+                  this.setDataAtRowProp(newRowIndex, column, previousRow[column])
+                  newRow[column] = previousRow[column]
+                }
+              })
+            }
+
+            const payloadRow = {
+              project_id: newRow?.project_id || '',
+              project_number: newRow?.project_number || '',
+              project_name: newRow?.project_name || '',
+              task_no: newRow?.task_no || '',
+              main_task: newRow?.main_task || '',
+              sub_task: newRow?.sub_task || '',
+              assignee: newRow?.assignee || '',
+              qty: newRow?.qty || 0,
+              budget: newRow?.budget || 0,
+              actual_cost: newRow?.actual_cost || 0,
+              user_id: authStore.user.userId,
+              plan_start: newRow?.plan_start || null,
+              plan_end: newRow?.plan_end || null,
+              actual_start: newRow?.actual_start || null,
+              actual_end: newRow?.actual_end || null
+            }
+
+            insertedRows.push(payloadRow)
+            insertedRowsToSave.push(payloadRow)
+            insertedRowMap.set(newRowIndex, payloadRow)
+          }
+
+          // console.log('Inserted rows:', insertedRows)
+        },
+        // Ended log
         afterChange(changes, source) {    // Triggered automatically after any cell value changes in Handsontable
           if (!changes || source === 'loadData') return   // Ignore if there are no changes or if the changes were caused by loadData()
 
@@ -423,6 +483,15 @@ const loadData = async () => {
                 syncSummaryActualCost(rowData, newValue)
               }
               return
+            }
+
+            const rowKey = row  //uses the row index as the lookup key.
+            const insertedRow = insertedRowMap.get(rowKey)  //checks whether that row was previously created as a new
+
+            if (insertedRow) {        //If the row exists in the map, it immediately updates the matching field
+              insertedRow[prop] = newValue        // writes the new cell value into the saved object
+              insertedRow.user_id = authStore.user.userId       //ensures the row also has the current user ID
+              return        //stops the rest of the change handling, so this inserted row is not treated like a normal existing row.
             }
 
             // For normal row if the row has an item ID and the value really changed, record this row as modified
@@ -650,31 +719,6 @@ function buildProjectRows(rows) {
 
   const result = []
 
-  // const sortedGroups = Array.from(grouped.values()).sort((groupA, groupB) => {
-  //   const firstA = groupA[0]
-  //   const firstB = groupB[0]
-
-  //   if (firstA.project_id !== firstB.project_id) {
-  //     return firstA.project_id > firstB.project_id ? 1 : -1
-  //   }
-
-  //   const numberA = String(firstA.project_number ?? '')
-  //   const numberB = String(firstB.project_number ?? '')
-  //   const numberCompare = numberA.localeCompare(numberB, undefined, {
-  //     numeric: true,
-  //     sensitivity: 'base'
-  //   })
-
-  //   return numberCompare
-  // })
-
-  // sortedGroups.forEach(projectRows => {
-  //   projectRows.sort((a, b) => {
-  //     if (a.item_id !== b.item_id) {
-  //       return a.item_id > b.item_id ? 1 : -1
-  //     }
-  //     return 0
-  //   })
   const currentGroups = Array.from(grouped.values())
 
   // 3. Duyệt qua từng nhóm để tính toán dữ liệu hiển thị
