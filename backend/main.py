@@ -332,8 +332,7 @@ def get_project_summary(conn: pyodbc.Connection = Depends(get_db_connection)):
     cursor = conn.cursor()
     try:
         cursor.execute("EXEC [Design_System].[dbo].[USP_PM_Get_Project_Summary]")
-        columns = [col[0] for col in cursor.description]
-        rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        rows = cursor.fetchall()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
@@ -391,7 +390,6 @@ def get_project_summary(conn: pyodbc.Connection = Depends(get_db_connection)):
 
 @app.post("/project-items/delete")
 def delete_project_row(payload: DeleteRowRequest, conn: pyodbc.Connection = Depends(get_db_connection)):
-    print(payload.item_ids, payload.user_id)
     cursor = conn.cursor()
     try:
         result = cursor.execute(
@@ -412,6 +410,7 @@ def delete_project_row(payload: DeleteRowRequest, conn: pyodbc.Connection = Depe
     finally:
         cursor.close()
 
+
 @app.post("/project-items/insert")
 def insert_project_row(payload: List[InsertRowRequest], conn: pyodbc.Connection = Depends(get_db_connection)):
     cursor = conn.cursor()
@@ -421,24 +420,7 @@ def insert_project_row(payload: List[InsertRowRequest], conn: pyodbc.Connection 
     try:
         # Lặp qua từng item trong list dữ liệu truyền vào
         for item in payload:
-            print(
-                "EXEC USP_PM_Insert_Row_Data ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?", 
-                item.project_id, 
-                item.task_no,
-                item.main_task,
-                item.sub_task,
-                item.qty,
-                item.assignee or '',
-                item.budget,
-                item.actual_cost or 0,
-                item.user_id,
-                item.plan_start,
-                item.plan_end,
-                item.actual_start,
-                item.actual_end
-            )
             cursor.execute(
-            # print(
                 "EXEC USP_PM_Insert_Row_Data ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?", 
                 item.project_id, 
                 item.task_no,
@@ -454,7 +436,6 @@ def insert_project_row(payload: List[InsertRowRequest], conn: pyodbc.Connection 
                 item.actual_start,
                 item.actual_end
             )
-            
             # Lấy kết quả trả về của từng dòng (nếu SP có sinh kết quả)
             row_result = cursor.fetchone()
             status = str(row_result[0]) if row_result else 'UNKNOWN'
@@ -465,12 +446,6 @@ def insert_project_row(payload: List[InsertRowRequest], conn: pyodbc.Connection 
 
         # Commit toàn bộ sau khi chạy lỗi/thành công hết vòng lặp
         conn.commit()
-        print(f"Successfully inserted {success_count}/{len(payload)} rows.")
-        return {
-            "success": success_count == len(payload),
-            "message": f"Successfully inserted {success_count}/{len(payload)} rows.",
-            "details": results_summary
-        }
 
     except Exception as e:
         # Rollback lại toàn bộ nếu có bất kỳ dòng nào bị lỗi hệ thống/DB
@@ -478,6 +453,12 @@ def insert_project_row(payload: List[InsertRowRequest], conn: pyodbc.Connection 
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()
+        
+    return {
+        "success": success_count == len(payload),
+        "message": f"Successfully inserted {success_count}/{len(payload)} rows.",
+        "details": results_summary
+    }
 
 
 @app.put("/project-items/bulk-update")
@@ -532,6 +513,7 @@ def login(request: LoginRequest, conn: pyodbc.Connection = Depends(get_db_connec
         "setUserInfoStatus": 0,
         "user": user
     }
+
 
 @app.post("/changeuserpw")
 def change_user_password(request: ChangePasswordRequest, conn: pyodbc.Connection = Depends(get_db_connection)):

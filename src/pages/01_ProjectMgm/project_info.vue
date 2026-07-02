@@ -434,7 +434,6 @@ const loadData = async () => {
             insertedRowMap.set(newRowIndex, payloadRow)
           }
 
-          // console.log('Inserted rows:', insertedRows)
         },
         // Ended log
         afterChange(changes, source) {    // Triggered automatically after any cell value changes in Handsontable
@@ -465,22 +464,13 @@ const loadData = async () => {
 
               // Only process when: 1. The edited column is "actual_cost" and 2. The value has actually changed
               if (prop === 'actual_cost' && oldValue !== newValue) {
-                const nextRow = row + 1     // Calculate the row immediately below the header
-                const nextRowData = this.getSourceDataAtRow(nextRow)    // Get data of the next row
-                
-                // Ensure the next row exists and is NOT another header row
-                if (nextRowData && !nextRowData.is_header) {
-                  // Copy the header's actual_cost value into the detail row below
-                  this.setDataAtRowProp(nextRow, 'actual_cost', newValue)
+                const affectedIds = syncSummaryActualCost(rowData, newValue)
 
-                  // If the detail row has a valid item ID, mark it as modified so it can be saved later
-                  if (nextRowData.id_item) {
-                    changedRows.add(nextRowData.id_item)
+                affectedIds.forEach(idItem => {
+                  if (idItem) {
+                    changedRows.add(idItem)
                   }
-                }
-
-                // Update any summary data or calculations related to this header
-                syncSummaryActualCost(rowData, newValue)
+                })
               }
               return
             }
@@ -691,7 +681,9 @@ function calculateDays(startDate, endDate) {
 }
 
 function syncSummaryActualCost(headerRow, value) {
-  if (!headerRow || !headerRow.is_header) return
+  if (!headerRow || !headerRow.is_header) return []
+
+  const affectedIds = []
 
   tableData.value.forEach(row => {
     if (
@@ -700,8 +692,14 @@ function syncSummaryActualCost(headerRow, value) {
       row.main_task === headerRow.main_task
     ) {
       row.actual_cost = value
+      if (row.id_item) {
+        affectedIds.push(row.id_item)
+      }
     }
   })
+
+  headerRow.actual_cost = value
+  return affectedIds
 }
 
 function buildProjectRows(rows) {

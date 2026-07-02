@@ -67,7 +67,7 @@ const loadProjectSummary = async () => {
 
   try {
     const summary = await getProjectSummary()
-
+    console.log('Project Summary:', summary)
     stats.value = [
       { title: 'Total Projects', value: summary.total_projects ?? 0, trend: null, colorClass: 'border-blue-500' },
     //   { title: 'Projects Completed', value: summary.completed_projects ?? 0, trend: null, colorClass: 'border-green-500' },
