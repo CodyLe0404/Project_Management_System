@@ -129,6 +129,7 @@ const calculateAndSave = async () => {
       item_id: row.id_item,
       main_task: row.main_task || '',
       sub_task: row.sub_task || '',
+      qty: row.qty || 0,
       user_id: authStore.user.userId,
       assignee: row.assignee || null,
 
@@ -267,7 +268,9 @@ const loadData = async () => {
             // readOnly: true
           },
           {
-            data: 'qty'
+            data: 'qty',
+            readOnly: true,
+            renderer: hideRepeatedRenderer
           },
           {
             data: 'assignee'
@@ -351,17 +354,26 @@ const loadData = async () => {
 
           const rowData = this.instance.getSourceDataAtRow(row)
 
+          // if (rowData?.is_header) {
+          //   cellProperties.className = 'project-header-row'
+
+          //   const prop = this.instance.colToProp(col)
+          //   // Allow editing of both 'main_task' and 'actual_cost' in the header row
+          //   if (prop === 'main_task') {
+          //     cellProperties.readOnly = false
+          //   } else if (prop !== 'actual_cost') {
+          //     cellProperties.readOnly = true
+          //   }
+          // }
+
           if (rowData?.is_header) {
             cellProperties.className = 'project-header-row'
 
             const prop = this.instance.colToProp(col)
-            // Allow editing of both 'main_task' and 'actual_cost' in the header row
-            if (prop === 'main_task') {
-              cellProperties.readOnly = false
-            } else if (prop !== 'actual_cost') {
-              cellProperties.readOnly = true
-            }
-          }
+
+            const editableColumns = ['main_task', 'actual_cost', 'qty']
+            cellProperties.readOnly = !editableColumns.includes(prop)
+        }
 
           return cellProperties
         },
@@ -455,6 +467,20 @@ const loadData = async () => {
                   if (!nextRowData || nextRowData.is_header) break
                   
                   this.setDataAtRowProp(nextRow, 'main_task', newValue)
+                  if (nextRowData.id_item) {
+                    changedRows.add(nextRowData.id_item)
+                  }
+                  nextRow++
+                }
+              }
+
+              if (prop === 'qty' && oldValue !== newValue) {
+                let nextRow = row + 1
+                while (true) {
+                  const nextRowData = this.getSourceDataAtRow(nextRow)
+                  if (!nextRowData || nextRowData.is_header) break
+
+                  this.setDataAtRowProp(nextRow, 'qty', newValue)
                   if (nextRowData.id_item) {
                     changedRows.add(nextRowData.id_item)
                   }
@@ -836,6 +862,7 @@ const hideRepeatedColumns = [
   'project_name',
   'task_no',
   'main_task',
+  'qty',
   'budget',
   'actual_cost',
   'budget_variance'

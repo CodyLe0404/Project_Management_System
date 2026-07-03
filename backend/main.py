@@ -86,6 +86,7 @@ class ProjectItemUpdate(BaseModel):
     item_id: int
     main_task: Optional[str] = None
     sub_task: str
+    qty: Optional[int] = None
     user_id: str
     assignee: Optional[str] = None
     plan_start: Optional[str] = None
@@ -469,11 +470,11 @@ def bulk_update(items: List[ProjectItemUpdate], conn: pyodbc.Connection = Depend
             cursor.execute(
                 """
                 UPDATE [Design_System].[dbo].[DS_PM_Item]
-                SET main_task=?, sub_task=?, assignee=?, plan_start=?, plan_end=?, actual_start=?, actual_end=?, actual_cost=?, remark=?, updated_at=getdate(), update_by=?
+                SET main_task=?, sub_task=?, qty=?, assignee=?, plan_start=?, plan_end=?, actual_start=?, actual_end=?, actual_cost=?, remark=?, updated_at=getdate(), update_by=?
                 WHERE id_item=?
                 """,
                 (
-                    item.main_task, item.sub_task, item.assignee, item.plan_start, item.plan_end,
+                    item.main_task, item.sub_task, item.qty, item.assignee, item.plan_start, item.plan_end,
                     item.actual_start, item.actual_end, item.actual_cost,
                     item.remark, item.user_id, item.item_id
                 )
