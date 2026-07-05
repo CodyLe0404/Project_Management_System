@@ -92,7 +92,7 @@ const isSaving = ref(false)
 
 let hot = null
 const changedRows = new Set()
-let deletedItemIds = ""
+let deletedItemIds = []
 let insertedRowsToSave = []
 const insertedRowMap = new Map()  // Keep newly inserted rows in a map so their values can be updated immediately as the user edits cells in Handsontable.
 
@@ -102,9 +102,13 @@ const calculateAndSave = async () => {
   try {
     if (!hot) return
 
-    if (deletedItemIds) {
-      await deleteProjectRowData(deletedItemIds, authStore.user.userId)
-      deletedItemIds = ""
+    if (deletedItemIds.length) {
+      var remove_rows = deletedItemIds.join(',')
+
+      await deleteProjectRowData(remove_rows, authStore.user.userId)
+
+      deletedItemIds = []
+      
       await loadData()
     }
 
@@ -164,7 +168,7 @@ const calculateAndSave = async () => {
 }
 const loadData = async () => {
   try {
-    deletedItemIds = ""
+    deletedItemIds = []
     const rawData = await getProjectsDetails()
 
     tableData.value = buildProjectRows(rawData || [])
@@ -390,7 +394,7 @@ const loadData = async () => {
           }
 
           if (removedIds.length) {
-            deletedItemIds = removedIds.join(',')
+            deletedItemIds.push(...removedIds)
           }
 
           return true
