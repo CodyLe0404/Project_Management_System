@@ -45,11 +45,11 @@
             <div v-for="(item, idx) in items" :key="item.id" class="border rounded-2xl p-4 bg-white shadow-sm relative">
             <div class="grid gap-4 grid-cols-1 lg:grid-cols-[0.8fr_1.8fr_1.0fr_1.2fr_auto] items-end">
               <div>
-                <label class="block text-sm text-slate-600 mb-1">Tên hạng mục</label>
+                <label class="block text-sm text-slate-600 mb-1">Task No</label>
                 <input 
                   v-model="item.task_name" 
                   type="text" 
-                  :placeholder="'Task ' + (idx + 1)" 
+                  :placeholder="'Ví dụ: 102'" 
                   class="w-full border border-slate-300 rounded-2xl px-3 py-2 text-sm text-slate-900 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100" 
                 />
               </div>

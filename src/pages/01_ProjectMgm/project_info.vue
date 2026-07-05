@@ -412,7 +412,8 @@ const loadData = async () => {
                 'main_task',
                 'qty',
                 'budget',
-                'actual_cost'
+                'actual_cost',
+                'order_no'
               ]
 
               columnsToCopy.forEach(column => {
@@ -438,9 +439,10 @@ const loadData = async () => {
               plan_start: newRow?.plan_start || null,
               plan_end: newRow?.plan_end || null,
               actual_start: newRow?.actual_start || null,
-              actual_end: newRow?.actual_end || null
+              actual_end: newRow?.actual_end || null,
+              order_no: newRow?.order_no + 1 || null
             }
-
+            // console.log('Inserted Row Payload:', payloadRow)
             insertedRows.push(payloadRow)
             insertedRowsToSave.push(payloadRow)
             insertedRowMap.set(newRowIndex, payloadRow)

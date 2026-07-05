@@ -1,3 +1,5 @@
+from unittest import result
+
 from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -114,7 +116,8 @@ class InsertRowRequest(BaseModel):
     plan_end: Optional[date] = None
     actual_start: Optional[date] = None
     actual_end: Optional[date] = None
-
+    order_no: Optional[int] = None
+    
 class LoginRequest(BaseModel):
     ldapName: str
     userId: str
@@ -258,35 +261,43 @@ def health_check():
 @app.post("/projects")
 def create_project(payload: ProjectPayload, conn: pyodbc.Connection = Depends(get_db_connection)):
     cursor = conn.cursor()
+    project_id = payload.general['no']
+    user_id = payload.general['userId']
     try:
-        cursor.execute(
-            """
-            INSERT INTO [Design_System].[dbo].[DS_PM_Project] 
-            (project_id, project_number, project_name, active_flag, created_at, updated_at, create_by)
-            VALUES (?, ?, ?, 1, getdate(), getdate(), ?)
-            """,
-            (
-                payload.general['no'],
-                payload.general['projectNumber'],
-                payload.general['projectName'],
-                payload.general['userId']
-            )
+        cursor.execute("EXEC [Design_System].[dbo].[USP_PM_Create_Project] ?, ?, ?, ?",
+            payload.general['no'],
+            payload.general['projectNumber'],
+            payload.general['projectName'],
+            payload.general['userId']
         )
 
-        project_id = payload.general['no']
-        user_id = payload.general['userId']
+        result = cursor.fetchone()
+        # Kiểm tra nếu SP có trả về dữ liệu và lấy message (giả sử message ở cột đầu tiên)
+        sp_message = result[0] if result else 'Project created fail'
+
+        # Nếu thất bại, dừng lại và trả về thông báo lỗi luôn, không chạy tiếp bên dưới
+        if sp_message == 'Project created fail':
+            return {
+                "success": False,
+                "message": "Không thể tạo dự án. Đã dừng tiến trình.",
+                "id": project_id
+            }
+            
         rows = []
         for item in payload.items:
             # Safe boundary check for empty strings
             subtasks_raw = item.get('subtasks', '')
             if subtasks_raw:
+                order_no = 0
                 for subtask in subtasks_raw.strip().split('\n'):
+                    order_no += 1
                     rows.append((
                         project_id,
                         item['task_name'],
                         item['main_task'],
                         subtask.strip(),
                         item['qty'],
+                        order_no,
                         item['budget'],
                         user_id
                     ))
@@ -295,8 +306,8 @@ def create_project(payload: ProjectPayload, conn: pyodbc.Connection = Depends(ge
             cursor.executemany(
                 """
                 INSERT INTO [Design_System].[dbo].[DS_PM_Item] 
-                (project_id, task_no, main_task, sub_task, qty, budget, active_flag, created_at, updated_at, update_by)
-                VALUES (?, ?, ?, ?, ?, ?, 1, getdate(), getdate(), ?)
+                (project_id, task_no, main_task, sub_task, qty, ord_no, budget, active_flag, created_at, updated_at, update_by)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 1, getdate(), getdate(), ?)
                 """,
                 rows
             )
@@ -422,7 +433,7 @@ def insert_project_row(payload: List[InsertRowRequest], conn: pyodbc.Connection 
         # Lặp qua từng item trong list dữ liệu truyền vào
         for item in payload:
             cursor.execute(
-                "EXEC USP_PM_Insert_Row_Data ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?", 
+                "EXEC USP_PM_Insert_Row_Data ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?", 
                 item.project_id, 
                 item.task_no,
                 item.main_task,
@@ -435,7 +446,8 @@ def insert_project_row(payload: List[InsertRowRequest], conn: pyodbc.Connection 
                 item.plan_start,
                 item.plan_end,
                 item.actual_start,
-                item.actual_end
+                item.actual_end,
+                item.order_no
             )
             # Lấy kết quả trả về của từng dòng (nếu SP có sinh kết quả)
             row_result = cursor.fetchone()
@@ -465,32 +477,54 @@ def insert_project_row(payload: List[InsertRowRequest], conn: pyodbc.Connection 
 @app.put("/project-items/bulk-update")
 def bulk_update(items: List[ProjectItemUpdate], conn: pyodbc.Connection = Depends(get_db_connection)):
     cursor = conn.cursor()
+    # 🚀 Bật tính năng tối ưu hóa tốc độ gửi tham số hàng loạt cho pyodbc
+    cursor.fast_executemany = True
+    
     try:
+        # 1. Chuyển đổi danh sách objects (Pydantic models) thành danh sách các tuples
+        rows = []
         for item in items:
-            cursor.execute(
+            rows.append((
+                item.main_task,     # ? số 1
+                item.sub_task,      # ? số 2
+                item.qty,           # ? số 3
+                item.assignee,      # ? số 4
+                item.plan_start,    # ? số 5
+                item.plan_end,      # ? số 6
+                item.actual_start,  # ? số 7
+                item.actual_end,    # ? số 8
+                item.actual_cost,   # ? số 9
+                item.remark,        # ? số 10
+                item.user_id,       # ? số 11 (update_by)
+                item.item_id        # ? số 12 (WHERE id_item=?)
+            ))
+
+        # 2. Thực thi cập nhật hàng loạt nếu có dữ liệu
+        if rows:
+            cursor.executemany(
                 """
                 UPDATE [Design_System].[dbo].[DS_PM_Item]
-                SET main_task=?, sub_task=?, qty=?, assignee=?, plan_start=?, plan_end=?, actual_start=?, actual_end=?, actual_cost=?, remark=?, updated_at=getdate(), update_by=?
+                SET main_task=?, sub_task=?, qty=?, assignee=?, plan_start=?, plan_end=?, 
+                    actual_start=?, actual_end=?, actual_cost=?, remark=?, updated_at=getdate(), update_by=?
                 WHERE id_item=?
                 """,
-                (
-                    item.main_task, item.sub_task, item.qty, item.assignee, item.plan_start, item.plan_end,
-                    item.actual_start, item.actual_end, item.actual_cost,
-                    item.remark, item.user_id, item.item_id
-                )
+                rows
             )
 
+        # 3. Commit một lần duy nhất cho toàn bộ các dòng được cập nhật
         conn.commit()
+        
         return {
             "success": True,
             "updated": len(items)
         }
     except Exception as e:
+        # Nếu bất kỳ dòng nào lỗi, hủy bỏ (rollback) toàn bộ tiến trình để đảm bảo tính nhất quán
         conn.rollback()
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()
-
+        
 
 @app.post("/Common/Login", response_model=LoginResponse)
 def login(request: LoginRequest, conn: pyodbc.Connection = Depends(get_db_connection)):
