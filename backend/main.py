@@ -332,10 +332,10 @@ def create_project(payload: ProjectPayload, conn: pyodbc.Connection = Depends(ge
         sp_message = result[0] if result else 'Project created fail'
 
         # Nếu thất bại, dừng lại và trả về thông báo lỗi luôn, không chạy tiếp bên dưới
-        if sp_message == 'Project created fail':
+        if sp_message != 'Project created successfully':
             return {
                 "success": False,
-                "message": "Không thể tạo dự án. Đã dừng tiến trình.",
+                "message": sp_message,
                 "id": project_id
             }
         
@@ -376,8 +376,8 @@ def create_project(payload: ProjectPayload, conn: pyodbc.Connection = Depends(ge
         
         return {
             "success": True,
-            "id": project_id,
-            "total_rows": len(rows)
+            "message": sp_message,
+            "id": project_id
         }
 
     except Exception as e:

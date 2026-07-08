@@ -247,6 +247,83 @@ const validateForm = () => {
   return true
 }
 
+// const createAndEmit = async () => {
+//   if (isSaving.value) return
+//   validationError.value = '' // Reset lỗi validation
+//   saveError.value = ''        // Reset lỗi cũ
+//   saveSuccess.value = ''      // Reset thông báo thành công cũ
+
+//   // Validate form trước khi lưu
+//   if (!validateForm()) {
+//     return
+//   }
+
+//   isSaving.value = true       // Bật trạng thái loading
+
+//   const resetForm = () => {
+//     // Reset thông tin chung
+//     general.no = ''
+//     general.projectNumber = ''
+//     general.projectName = ''
+    
+//     // Reset danh sách hạng mục về lại 1 mục duy nhất trống
+//     idCounter = 1
+//     items.value = [
+//       {
+//         id: idCounter++,
+//         task_no: 1,
+//         task_name: '',
+//         main_task: '',
+//         qty: '',
+//         budget: '',
+//         isBudgetEditing: false,
+//         subtasks: defaultSubtasks,
+//         removable: false
+//       }
+//     ]
+    
+//     // Xóa các thông báo lỗi cũ nếu có
+//     validationError.value = ''
+//     saveError.value = ''
+//   }
+
+//   // Tạo clone dữ liệu để chuẩn bị gửi đi
+//   const payload = {
+//     general: { ...general },
+//     items: items.value.map((i, idx) => ({
+//       id: i.id,
+//       task_no: idx + 1,
+//       task_name: i.task_name ? i.task_name.trim() : '',
+//       main_task: i.main_task,
+//       qty: i.qty,
+//       budget: parseCurrency(i.budget),
+//       subtasks: i.subtasks,
+//       removable: i.removable
+//     }))
+//   }
+
+//   try {
+//     // Gọi service gửi API lên server
+//     const result = await createProject(payload)
+//     // console.log('Saved project id:', result.id)
+
+//     alert('Dự án đã được tạo thành công!')
+
+//     //Emit event thông báo cho component cha kèm data
+//     emit('create-project', payload)
+
+//     resetForm()
+//   } 
+//   catch (error) {
+//     //Nếu lỗi, ghi nhận log và hiển thị thông báo lỗi lên giao diện
+//     console.error(error)
+//     saveError.value = error?.message || 'Lưu dự án thất bại.'
+//   } 
+//   finally {
+//     isSaving.value = false      // Bất kể thành công hay thất bại, tắt trạng thái loading
+//   }
+// }
+
 const createAndEmit = async () => {
   if (isSaving.value) return
   validationError.value = '' // Reset lỗi validation
@@ -305,17 +382,26 @@ const createAndEmit = async () => {
   try {
     // Gọi service gửi API lên server
     const result = await createProject(payload)
-    // console.log('Saved project id:', result.id)
+    
+    // KIỂM TRA KẾT QUẢ TRẢ VỀ TỪ STORED PROCEDURE QUA API
+    if (!result.success) {
+      // Trường hợp 'Skip insert new project', 'Project ID existed' hoặc 'Project created fail'
+      alert(`Không thể tạo dự án: ${result.message}`)
+      // saveError.value = result.message // Hiển thị thông báo lỗi lên UI
+      return // Dừng lại, không emit và không reset form để user sửa lại
+    }
 
-    alert('Dự án đã được tạo thành công!')
+    // Trường hợp 'Project created successfully'
+    alert(result.message || 'Dự án đã được tạo thành công!')
+    // saveSuccess.value = result.message
 
-    //Emit event thông báo cho component cha kèm data
+    // Emit event thông báo cho component cha kèm data
     emit('create-project', payload)
 
     resetForm()
   } 
   catch (error) {
-    //Nếu lỗi, ghi nhận log và hiển thị thông báo lỗi lên giao diện
+    // Nếu lỗi kết nối, sập nguồn, lỗi HTTP status code (!response.ok)...
     console.error(error)
     saveError.value = error?.message || 'Lưu dự án thất bại.'
   } 
