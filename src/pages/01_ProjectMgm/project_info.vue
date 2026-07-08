@@ -446,7 +446,7 @@ const loadData = async () => {
               actual_end: newRow?.actual_end || null,
               order_no: newRow?.order_no + 1 || null
             }
-            // console.log('Inserted Row Payload:', payloadRow)
+            console.log('Inserted Row Payload:', payloadRow)
             insertedRows.push(payloadRow)
             insertedRowsToSave.push(payloadRow)
             insertedRowMap.set(newRowIndex, payloadRow)

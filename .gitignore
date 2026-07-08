@@ -157,3 +157,6 @@ test/
 
 # database
 *.db
+
+#config file
+backend/config.ini

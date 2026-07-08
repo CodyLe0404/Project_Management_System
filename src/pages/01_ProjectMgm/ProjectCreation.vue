@@ -260,6 +260,33 @@ const createAndEmit = async () => {
 
   isSaving.value = true       // Bật trạng thái loading
 
+  const resetForm = () => {
+    // Reset thông tin chung
+    general.no = ''
+    general.projectNumber = ''
+    general.projectName = ''
+    
+    // Reset danh sách hạng mục về lại 1 mục duy nhất trống
+    idCounter = 1
+    items.value = [
+      {
+        id: idCounter++,
+        task_no: 1,
+        task_name: '',
+        main_task: '',
+        qty: '',
+        budget: '',
+        isBudgetEditing: false,
+        subtasks: defaultSubtasks,
+        removable: false
+      }
+    ]
+    
+    // Xóa các thông báo lỗi cũ nếu có
+    validationError.value = ''
+    saveError.value = ''
+  }
+
   // Tạo clone dữ liệu để chuẩn bị gửi đi
   const payload = {
     general: { ...general },
@@ -278,23 +305,21 @@ const createAndEmit = async () => {
   try {
     // Gọi service gửi API lên server
     const result = await createProject(payload)
-    console.log('Saved project id:', result.id)
+    // console.log('Saved project id:', result.id)
 
-    //Nếu thành công, hiển thị thông báo thành công
-    saveSuccess.value = 'Dự án đã được tạo thành công!'
-    
-    // Auto-clear success message after 5 seconds
-    setTimeout(() => {
-      saveSuccess.value = ''
-    }, 5000)
+    alert('Dự án đã được tạo thành công!')
 
     //Emit event thông báo cho component cha kèm data
     emit('create-project', payload)
-  } catch (error) {
+
+    resetForm()
+  } 
+  catch (error) {
     //Nếu lỗi, ghi nhận log và hiển thị thông báo lỗi lên giao diện
     console.error(error)
     saveError.value = error?.message || 'Lưu dự án thất bại.'
-  } finally {
+  } 
+  finally {
     isSaving.value = false      // Bất kể thành công hay thất bại, tắt trạng thái loading
   }
 }

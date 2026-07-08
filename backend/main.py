@@ -1,18 +1,17 @@
-from unittest import result
+import json
 
 from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Any, Optional, List, Generator
-from datetime import datetime
-from contextlib import contextmanager
+from datetime import datetime, date
 import pyodbc, time
 import logging
 from logging.handlers import RotatingFileHandler
-from datetime import date
+import configparser
 
 # -- CONFIG LOG TRACKING --
-# Tạo file log lưu tại thư mục hiện tại, tối đa 5MB/file, giữ lại tối đa 5 file backup
+# Tạo file log lưu tại thư mục hiện tại, mỗi ngày tạo file mới
 log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 log_handler = RotatingFileHandler('api_access.log', maxBytes=5*1024*1024, backupCount=5, encoding='utf-8')
 log_handler.setFormatter(log_formatter)
@@ -21,6 +20,55 @@ logger = logging.getLogger("API_Logger")
 logger.setLevel(logging.INFO)
 logger.addHandler(log_handler)
 
+daily_logger = logging.getLogger("PM_Tracker")
+daily_logger.setLevel(logging.INFO)
+current_log_date = None
+daily_handler = None
+
+
+def get_daily_handler():
+    global current_log_date, daily_handler
+    today = datetime.now().date()
+    if daily_handler is None or current_log_date != today:
+        if daily_handler is not None:
+            daily_logger.removeHandler(daily_handler)
+            daily_handler.close()
+
+        filename = f"PM_log_tracking_{today.strftime('%Y_%m_%d')}.log"
+        daily_handler = logging.FileHandler(filename, encoding='utf-8')
+        daily_handler.setFormatter(logging.Formatter('%(message)s'))
+        daily_logger.addHandler(daily_handler)
+        current_log_date = today
+
+    return daily_handler
+
+
+def log_daily(message: str, level: int = logging.INFO):
+    get_daily_handler()
+    timestamped_message = f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {message}"
+    daily_logger.log(level, timestamped_message)
+
+def extract_user_from_request(request: Request, body_text: str) -> str:
+    user_id = None
+
+    if 'userId' in request.query_params:
+        user_id = request.query_params.get('userId')
+    elif 'user_id' in request.query_params:
+        user_id = request.query_params.get('user_id')
+
+    if not user_id and body_text:
+        try:
+            payload = json.loads(body_text)
+            if isinstance(payload, list) and payload:
+                payload = payload[0]
+
+            if isinstance(payload, dict):
+                user_id = payload.get('userId') or payload.get('user_id') or payload.get('user')
+        except json.JSONDecodeError:
+            user_id = None
+
+    return user_id or 'anonymous'
+
 # --- APP CONFIGURATION ---
 app = FastAPI(title="Project Management Backend")
 
@@ -28,7 +76,10 @@ app = FastAPI(title="Project Management Backend")
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     start_time = time.time()
-    
+    body_bytes = await request.body()
+    body_text = body_bytes.decode('utf-8', errors='replace') if body_bytes else ''
+    user_id = extract_user_from_request(request, body_text)
+
     # Lấy IP của máy gọi tới (Xử lý cả trường hợp đi qua Proxy/Load Balancer nếu có)
     client_ip = request.headers.get("x-forwarded-for") or request.client.host
     
@@ -36,19 +87,26 @@ async def log_requests(request: Request, call_next):
     
     process_time = (time.time() - start_time) * 1000
     formatted_process_time = f"{process_time:.2f}ms"
-    
-    # Ghi log: Thời gian, IP, Method, URL, Status Code, Thời gian xử lý
-    logger.info(f"IP: {client_ip} | Method: {request.method} | Path: {request.url.path} | Status: {response.status_code} | Duration: {formatted_process_time}")
+    log_message = (
+        f"IP: {client_ip} | User: {user_id} | Method: {request.method} | "
+        f"Path: {request.url.path} | Status: {response.status_code} | Duration: {formatted_process_time}"
+    )
+
+    logger.info(log_message)
+    log_daily(log_message)
     
     return response
 
 
 # --- DATABASE CONNECTION UTILITY ---
 def get_db_connection() -> Generator[pyodbc.Connection, None, None]:
-    SERVER = '10.13.227.98,1433'  
-    DATABASE = 'Design_System'  
-    USERNAME = 'hieplt'         
-    PASSWORD = 'Design@2026' 
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+
+    SERVER = config.get('DATABASE', 'server')
+    DATABASE = config.get('DATABASE', 'database')
+    USERNAME = config.get('DATABASE', 'username')
+    PASSWORD = config.get('DATABASE', 'password')
 
     conn_str = (
         f'DRIVER={{ODBC Driver 18 for SQL Server}};'
@@ -142,9 +200,6 @@ class LoginResponse(BaseModel):
     setUserInfoStatus: int
     user: UserInfo | None = None
     
-# --- APP CONFIGURATION ---
-app = FastAPI(title="Project Management Backend")
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", 
@@ -258,6 +313,7 @@ def test_connection(conn: pyodbc.Connection = Depends(get_db_connection)):
 def health_check():
     return {"status": "ok"}
 
+
 @app.post("/projects")
 def create_project(payload: ProjectPayload, conn: pyodbc.Connection = Depends(get_db_connection)):
     cursor = conn.cursor()
@@ -282,6 +338,8 @@ def create_project(payload: ProjectPayload, conn: pyodbc.Connection = Depends(ge
                 "message": "Không thể tạo dự án. Đã dừng tiến trình.",
                 "id": project_id
             }
+        
+        log_daily(f"[{user_id}] Create | Project ID: {project_id} | Project Name: {payload.general['projectName']} | Message: {sp_message}")
             
         rows = []
         for item in payload.items:
@@ -314,6 +372,8 @@ def create_project(payload: ProjectPayload, conn: pyodbc.Connection = Depends(ge
 
         conn.commit()
         
+        log_daily(f"[{user_id}] Insert | Total item: {len(rows)} | Project ID: {project_id} successfully.")
+        
         return {
             "success": True,
             "id": project_id,
@@ -325,6 +385,7 @@ def create_project(payload: ProjectPayload, conn: pyodbc.Connection = Depends(ge
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()
+
 
 @app.get("/projects/details")
 def get_project_details(conn: pyodbc.Connection = Depends(get_db_connection)):
@@ -338,6 +399,7 @@ def get_project_details(conn: pyodbc.Connection = Depends(get_db_connection)):
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()
+
 
 @app.get("/projects/summary")
 def get_project_summary(conn: pyodbc.Connection = Depends(get_db_connection)):
@@ -412,6 +474,9 @@ def delete_project_row(payload: DeleteRowRequest, conn: pyodbc.Connection = Depe
         conn.commit()
 
         status = str(result[0]) if result else ''
+        
+        log_daily(f"[{payload.user_id}] Delete | items: {payload.item_ids} | Result: {status}")
+        
         return {
             "success": status.upper() == 'SUCCESS',
             "result": status
@@ -454,6 +519,8 @@ def insert_project_row(payload: List[InsertRowRequest], conn: pyodbc.Connection 
             status = str(row_result[0]) if row_result else 'UNKNOWN'
             results_summary.append({"task_no": item.task_no, "status": status})
             
+            log_daily(f"[{item.user_id}] Insert | Task No: {item.task_no} | Order No: {item.order_no} | Result: {status}")
+            
             if status.upper() == 'SUCCESS':
                 success_count += 1
 
@@ -466,10 +533,12 @@ def insert_project_row(payload: List[InsertRowRequest], conn: pyodbc.Connection 
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()
+    
+    log_daily(f"[{payload[0].user_id if payload else 'unknown'}] Insert | Successfully inserted {success_count}/{len(payload)} rows.")
         
     return {
         "success": success_count == len(payload),
-        "message": f"Successfully inserted {success_count}/{len(payload)} rows.",
+        "message": f"Successfully insert {success_count}/{len(payload)} rows.",
         "details": results_summary
     }
 
@@ -514,6 +583,8 @@ def bulk_update(items: List[ProjectItemUpdate], conn: pyodbc.Connection = Depend
         # 3. Commit một lần duy nhất cho toàn bộ các dòng được cập nhật
         conn.commit()
         
+        log_daily(f"[{items[0].user_id if items else 'unknown'}] Update | Bulk update completed. Total items updated: {len(items)}.")
+        
         return {
             "success": True,
             "updated": len(items)
@@ -537,12 +608,14 @@ def login(request: LoginRequest, conn: pyodbc.Connection = Depends(get_db_connec
     )
 
     if user is None:
+        log_daily(f"[{request.userId}] Login | Failed")
         return {
             "message": "Invalid username or password",
             "setUserInfoStatus": -1,
             "user": None
         }
 
+    log_daily(f"[{request.userId}] Login | Successful")
     return {
         "message": "Login successful",
         "setUserInfoStatus": 0,
@@ -568,6 +641,9 @@ def change_user_password(request: ChangePasswordRequest, conn: pyodbc.Connection
 
         if status == 1:
             conn.commit()
+            log_daily(f"[{request.userId}] Change Password | Successfully changed password")
+        else:
+            log_daily(f"[{request.userId}] Change Password | Failed to change password: {message}")
 
         return {
             "status": status,
@@ -575,6 +651,7 @@ def change_user_password(request: ChangePasswordRequest, conn: pyodbc.Connection
         }
     except Exception as e:
         conn.rollback()
+        log_daily(f"[{request.userId}] Change Password | Error occurred while changing password: {e}")
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()
