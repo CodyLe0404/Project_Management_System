@@ -149,6 +149,8 @@ class ProjectItemUpdate(BaseModel):
     qty: Optional[int] = None
     user_id: str
     assignee: Optional[str] = None
+    process: Optional[float] = None
+    status: Optional[str] = None
     plan_start: Optional[str] = None
     plan_end: Optional[str] = None
     actual_start: Optional[str] = None
@@ -313,6 +315,22 @@ def test_connection(conn: pyodbc.Connection = Depends(get_db_connection)):
 def health_check():
     return {"status": "ok"}
 
+def check_duplicate_task(cursor, project_id, items):
+    main_task_existed = []
+    for item in items:
+        main_task = item['main_task']
+        cursor.execute("EXEC USP_DS_Check_Duplicate_Task ?, ?", project_id, main_task)
+        result = cursor.fetchone()
+        if result[0] != 'Not existed':
+            main_task_existed.append(main_task)
+    
+    # If the list has data, format and return the message
+    if main_task_existed:
+        duplicate_tasks_str = ", ".join(main_task_existed)
+        return f"Main task: {duplicate_tasks_str} existed"
+        
+    return []
+
 
 @app.post("/projects")
 def create_project(payload: ProjectPayload, conn: pyodbc.Connection = Depends(get_db_connection)):
@@ -320,6 +338,15 @@ def create_project(payload: ProjectPayload, conn: pyodbc.Connection = Depends(ge
     project_id = payload.general['no']
     user_id = payload.general['userId']
     try:
+        
+        duplicate_task_message = check_duplicate_task(cursor, project_id, payload.items)
+        if duplicate_task_message:
+            return {
+                "success": False,
+                "message": duplicate_task_message,
+                "id": project_id
+            }
+            
         cursor.execute("EXEC [Design_System].[dbo].[USP_PM_Create_Project] ?, ?, ?, ?",
             payload.general['no'],
             payload.general['projectNumber'],
@@ -558,6 +585,8 @@ def bulk_update(items: List[ProjectItemUpdate], conn: pyodbc.Connection = Depend
                 item.sub_task,      # ? số 2
                 item.qty,           # ? số 3
                 item.assignee,      # ? số 4
+                item.process,
+                item.status,
                 item.plan_start,    # ? số 5
                 item.plan_end,      # ? số 6
                 item.actual_start,  # ? số 7
@@ -573,7 +602,7 @@ def bulk_update(items: List[ProjectItemUpdate], conn: pyodbc.Connection = Depend
             cursor.executemany(
                 """
                 UPDATE [Design_System].[dbo].[DS_PM_Item]
-                SET main_task=?, sub_task=?, qty=?, assignee=?, plan_start=?, plan_end=?, 
+                SET main_task=?, sub_task=?, qty=?, assignee=?, [percent]=?, status=?, plan_start=?, plan_end=?, 
                     actual_start=?, actual_end=?, actual_cost=?, remark=?, updated_at=getdate(), update_by=?
                 WHERE id_item=?
                 """,

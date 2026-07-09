@@ -128,7 +128,7 @@ const calculateAndSave = async () => {
     const source = tableData.value.filter(
       row => !row.is_header && changedRows.has(row.id_item)
     )
-    
+
     const payload = source.map(row => ({
       item_id: row.id_item,
       main_task: row.main_task || '',
@@ -136,20 +136,17 @@ const calculateAndSave = async () => {
       qty: row.qty || 0,
       user_id: authStore.user.userId,
       assignee: row.assignee || null,
-
+      process: getRowProcess(row) || 0,
+      status: getTaskStatus(row) || '',
       plan_start: row.plan_start || null,
       plan_end: row.plan_end || null,
-
       actual_start: row.actual_start || null,
       actual_end: row.actual_end || null,
-
-      actual_cost:
-        row.actual_cost === ''
-          ? null
-          : Number(row.actual_cost),
-
+      actual_cost: row.actual_cost === '' ? null : Number(row.actual_cost),
       remark: row.remark || ''
     }))
+
+    console.log('Payload to save:', payload)
 
     await saveProjectItems(payload)
 
@@ -166,6 +163,7 @@ const calculateAndSave = async () => {
     isSaving.value = false
   }
 }
+
 const loadData = async () => {
   try {
     deletedItemIds = []
@@ -738,7 +736,7 @@ function buildProjectRows(rows) {
   const grouped = new Map()
 
   rows.forEach(row => {
-    const key = `${row.project_id}_${row.main_task}`
+    const key = `${row.project_id}_${row.task_no}_${row.main_task}`
 
     if (!grouped.has(key)) {
       grouped.set(key, [])
@@ -789,8 +787,8 @@ function buildProjectRows(rows) {
 
     const detailRows = projectRows.map(row => ({
       ...row,
-      status: getTaskStatus(row),
-      percent: getRowProcess(row),
+      // status: getTaskStatus(row),
+      // percent: getRowProcess(row),
       plan_day: calculateDays(row.plan_start, row.plan_end),
       actual_day: calculateDays(row.actual_start, row.actual_end)
     }))

@@ -1,11 +1,8 @@
 
 import axios from 'axios'
 
-// const API_BASE = import.meta.env.VITE_API_BASE || "http://10.13.227.98:8000";
-const API_BASE = import.meta.env.VITE_API_BASE || "http://10.13.227.63:8000";
-
-let cachedProjects = null
-let cachedProjectDetails = {}
+const API_BASE = import.meta.env.VITE_API_BASE || "http://10.13.227.98:8000";
+// const API_BASE = import.meta.env.VITE_API_BASE || "http://10.13.227.125:8000";
 
 export async function createProject(project) {
   const response = await fetch(`${API_BASE}/projects`, {
@@ -21,7 +18,6 @@ export async function createProject(project) {
     throw new Error(`Failed to save project: ${response.status} ${errorText}`);
   }
 
-  cachedProjects = null
   return response.json();
 }
 
