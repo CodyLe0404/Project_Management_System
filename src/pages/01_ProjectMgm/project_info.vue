@@ -146,7 +146,7 @@ const calculateAndSave = async () => {
       remark: row.remark || ''
     }))
 
-    console.log('Payload to save:', payload)
+    // console.log('Payload to save:', payload)
 
     await saveProjectItems(payload)
 
@@ -168,6 +168,7 @@ const loadData = async () => {
   try {
     deletedItemIds = []
     const rawData = await getProjectsDetails()
+    console.log(rawData)
 
     tableData.value = buildProjectRows(rawData || [])
     changedRows.clear()
@@ -176,6 +177,7 @@ const loadData = async () => {
 
     const projectNameWidth = getAutoFitColumnWidth(tableData.value, 'project_name')
     const mainTaskWidth = getAutoFitColumnWidth(tableData.value, 'main_task')
+    const asssigneeWidth = getAutoFitColumnWidth(tableData.value, 'assignee')
 
     if (hot) {
       hot.destroy()
@@ -275,7 +277,8 @@ const loadData = async () => {
             renderer: hideRepeatedRenderer
           },
           {
-            data: 'assignee'
+            data: 'assignee',
+            width: asssigneeWidth
           },
           {
             data: 'percent',
