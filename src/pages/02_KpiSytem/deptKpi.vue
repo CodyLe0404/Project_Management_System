@@ -47,13 +47,13 @@
     />
 
     <!-- Active Department Description Details (Hidden for Global Overview) -->
-    <div v-if="activeTab !== 'Global'" class="relative z-10 bg-white/50 dark:bg-slate-900/30 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/50 rounded-2xl p-4 flex items-start gap-3 transition-all duration-300">
-      <div class="p-3 rounded-xl bg-gradient-to-br text-white shadow-md shadow-indigo-500/10" :class="departmentsData[activeTab].colorClass">
+    <div v-if="currentDepartment" class="relative z-10 bg-white/50 dark:bg-slate-900/30 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/50 rounded-2xl p-4 flex items-start gap-3 transition-all duration-300">
+      <div class="p-3 rounded-xl bg-gradient-to-br text-white shadow-md shadow-indigo-500/10" :class="currentDepartment.colorClass">
         <i :class="getTabIcon(activeTab)" class="text-xl"></i>
       </div>
       <div>
         <h2 class="text-lg font-bold text-slate-800 dark:text-slate-200">{{ activeTab }} Department Overview</h2>
-        <p class="text-xs text-slate-600 dark:text-slate-400 mt-0.5">{{ departmentsData[activeTab].description }}</p>
+        <p class="text-xs text-slate-600 dark:text-slate-400 mt-0.5">{{ currentDepartment.description }}</p>
       </div>
     </div>
 
@@ -337,6 +337,11 @@ const resolvedDepartmentsData = computed(() => {
     };
   });
   return data;
+});
+
+const currentDepartment = computed(() => {
+  if (activeTab.value === 'Global') return null;
+  return resolvedDepartmentsData.value[activeTab.value] || null;
 });
 
 // Filtered Projects based on selection

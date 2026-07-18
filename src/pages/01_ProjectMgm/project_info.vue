@@ -376,7 +376,7 @@ const loadData = async () => {
 
             const prop = this.instance.colToProp(col)
 
-            const editableColumns = ['main_task', 'actual_cost', 'qty']
+            const editableColumns = ['main_task', 'budget', 'actual_cost', 'qty']
             cellProperties.readOnly = !editableColumns.includes(prop)
         }
 
