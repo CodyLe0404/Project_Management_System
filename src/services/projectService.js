@@ -20,11 +20,9 @@ export async function createProject(project) {
   return response.json();
 }
 
-export async function getProjectsDetails() {
+export async function getProjectsDetails(userId) {
 
-  const response = await fetch(
-    `${API_BASE}/projects/details`
-  )
+  const response = await fetch(`${API_BASE}/projects/details?userId=${userId}`)
 
   if (!response.ok) {
 
@@ -38,8 +36,14 @@ export async function getProjectsDetails() {
   return await response.json()
 }
 
-export async function getProjectSummary() {
-  const response = await fetch(`${API_BASE}/projects/summary`)
+export async function getProjectSummary(userId) {
+  // URL sẽ thành: http://10.13.226.247:8000/projects/summary?userId=123
+  const response = await fetch(`${API_BASE}/projects/summary?userId=${userId}`, {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json'
+    }
+  });
 
   if (!response.ok) {
     const text = await response.text()
@@ -134,5 +138,4 @@ export async function changeUserPassword({ userId, currentPassword, newPassword 
 
   return await response.json()
 }
-
 

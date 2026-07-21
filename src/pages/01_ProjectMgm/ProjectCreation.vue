@@ -115,20 +115,22 @@ import { useAuthStore } from '../../stores/auth';
 
 const authStore = useAuthStore();
 
-const defaultSubtasks = `DE_SLD and Outline_diagram_R0
-DE_Bill Of Material (LT)_R0
-DE_Schematic diagram_R0
-DE_Bill Of Material (ST)_R0
-DE_Drawing for production_R0
-DM_Assembly drawings_R0
-DM_Bill Of Material (MD/LT)_R0
-DM_DWG_Enclosure drawings (Frame, Top, Side)_R0
-DM_DWG_Door drawings_R0
-DM_DWG_Inner part drawings (DM)_R0
-DM_DWG_Busbar drawings_R0
-DM_DWG_Drawing for production_R0
-DM_Bill Of Material(Final)_R0
-DM_Final drawing_R0`
+const defaultSubtasks = `DE_DWG_SLD and Outline_RO
+DE_DWG_Long term_RO
+DE_DWG_Schematic_RO
+DE_BOM_Short term_RO
+DE_DWG_for prod_R0
+DM_DWG_Assembly_RO
+DM_BOM_Long term_RO
+DM_DWG_Frame, Top, Side_R0
+DM_DWG_Door_R0
+DM_DWG_Inner part_RO
+DM_DWG_Busbar_R0
+DM_DWG_For production_RO
+DM_BOM_Final_R0
+DM_DWG_Final_R0
+DM_DOC_Accessory_R0
+DE_DWG_Final_R0`
 
 const general = reactive({ no: '', projectNumber: '', projectName: '', userId: authStore.user.userId })
 const isSaving = ref(false)
@@ -299,7 +301,8 @@ const createAndEmit = async () => {
       budget: parseCurrency(i.budget),
       subtasks: i.subtasks,
       removable: i.removable
-    }))
+    })),
+    userId: authStore.user.userId
   }
 
   try {

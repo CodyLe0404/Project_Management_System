@@ -2,11 +2,20 @@
  * Mock data for the Personal KPI & Project Tracking Dashboard.
  * Ready to be imported in a Vue 3 component.
  */
+import pic2 from '/src/assets/image_profile/pic2.jpg'
+import pic5 from '/src/assets/image_profile/pic5.jpg'
+import pic9 from '/src/assets/image_profile/pic9.jpg'
+import pic6 from '/src/assets/image_profile/pic6.jpg'
+import pic10 from '/src/assets/image_profile/pic10.jpg'
+import pic3 from '/src/assets/image_profile/pic3.jpg'
+
+// import pic04 from '/src/assets/image_profile/pic04.jpg'
+
 export const mockMembers = [
   {
     id: 1,
     name: "Alex Nguyen",
-    avatar: "/src/assets/image_profile/pic2.jpg",
+    avatar: pic2,
     role: "Project Manager",
     mainTasksCount: 12,
     subTasksCount: 34,
@@ -30,7 +39,7 @@ export const mockMembers = [
   {
     id: 2,
     name: "Sarah Chen",
-    avatar: "/src/assets/image_profile/pic5.jpg",
+    avatar: pic5,
     role: "Frontend Team Lead",
     mainTasksCount: 18,
     subTasksCount: 42,
@@ -46,7 +55,7 @@ export const mockMembers = [
   {
     id: 3,
     name: "Marcus Brodie",
-    avatar: "/src/assets/image_profile/pic8.avif",
+    avatar: pic9,
     role: "Senior Backend Developer",
     mainTasksCount: 15,
     subTasksCount: 38,
@@ -62,7 +71,7 @@ export const mockMembers = [
   {
     id: 4,
     name: "Elena Rostova",
-    avatar: "/src/assets/image_profile/pic6.jpg",
+    avatar: pic6,
     role: "UI/UX Designer",
     mainTasksCount: 10,
     subTasksCount: 28,
@@ -78,7 +87,7 @@ export const mockMembers = [
   {
     id: 5,
     name: "David Kim",
-    avatar: "/src/assets/image_profile/pic10.jpg",
+    avatar: pic10,
     role: "QA Automation Engineer",
     mainTasksCount: 8,
     subTasksCount: 52,
@@ -94,7 +103,7 @@ export const mockMembers = [
   {
     id: 6,
     name: "Aaliyah Jackson",
-    avatar: "/src/assets/image_profile/pic3.jpg",
+    avatar: pic3,
     role: "DevOps Engineer",
     mainTasksCount: 14,
     subTasksCount: 31,
@@ -106,5 +115,22 @@ export const mockMembers = [
       { projectName: "AWS Cloud Migration", projectStatus: "Doing" },
       { projectName: "CI/CD Pipeline Security Audit", projectStatus: "No plan" }
     ]
-  }
+  },
+  // {
+  //   id: 7,
+  //   name: "Cody Le",
+  //   avatar: pic04,
+  //   role: "Software Engineer",
+  //   mainTasksCount: 18,
+  //   subTasksCount: 42,
+  //   onTime: 32,
+  //   aheadOfSchedule: 8,
+  //   delayed: 5,
+  //   projects: [
+  //     { projectName: "Project Management System", projectStatus: "Ahead of schedule" },
+  //     { projectName: "API Gateway Integration", projectStatus: "On Time" },
+  //     { projectName: "AWS Cloud Migration", projectStatus: "Doing" },
+  //     { projectName: "CI/CD Pipeline Security Audit", projectStatus: "No plan" }
+  //   ]
+  // }
 ];

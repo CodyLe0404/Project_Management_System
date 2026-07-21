@@ -167,7 +167,7 @@ const calculateAndSave = async () => {
 const loadData = async () => {
   try {
     deletedItemIds = []
-    const rawData = await getProjectsDetails()
+    const rawData = await getProjectsDetails(authStore.user.userId)
     console.log(rawData)
 
     tableData.value = buildProjectRows(rawData || [])
@@ -685,7 +685,8 @@ function getTaskStatus(row) {
     }
 
     if (planEnd && actualEnd < planEnd) {
-      return 'Ahead of schedule'
+      // return 'Ahead of schedule'
+      return 'On Time'
     }
 
     return 'On Time'

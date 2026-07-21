@@ -49,6 +49,9 @@
 import { ref, onMounted } from 'vue'
 import { Card } from 'primevue'
 import { getProjectSummary } from '../services/projectService'
+import { useAuthStore } from '../stores/auth';
+
+const authStore = useAuthStore();
 
 const loading = ref(false)
 const stats = ref([
@@ -66,8 +69,9 @@ const loadProjectSummary = async () => {
   loading.value = true
 
   try {
-    const summary = await getProjectSummary()
-    console.log('Project Summary:', summary)
+    const summary = await getProjectSummary(authStore.user.userId)
+
+    // console.log('Project Summary:', summary)
     stats.value = [
       { title: 'Total Projects', value: summary.total_projects ?? 0, trend: null, colorClass: 'border-blue-500' },
     //   { title: 'Projects Completed', value: summary.completed_projects ?? 0, trend: null, colorClass: 'border-green-500' },

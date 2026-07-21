@@ -48,6 +48,7 @@ def log_daily(message: str, level: int = logging.INFO):
     timestamped_message = f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {message}"
     daily_logger.log(level, timestamped_message)
 
+
 def extract_user_from_request(request: Request, body_text: str) -> str:
     user_id = None
 
@@ -68,6 +69,7 @@ def extract_user_from_request(request: Request, body_text: str) -> str:
             user_id = None
 
     return user_id or 'anonymous'
+
 
 # --- APP CONFIGURATION ---
 app = FastAPI(title="Project Management Backend")
@@ -141,6 +143,7 @@ class ProjectRowsPayload(BaseModel):
 class ProjectPayload(BaseModel):
     general: dict[str, Any]
     items: list[dict[str, Any]]
+    userId: str
 
 class ProjectItemUpdate(BaseModel):
     item_id: int
@@ -183,19 +186,16 @@ class LoginRequest(BaseModel):
     userId: str
     password: str
 
-
 class ChangePasswordRequest(BaseModel):
     userId: str
     currentPassword: str
     newPassword: str
-
 
 class UserInfo(BaseModel):
     userId: str
     displayName: str
     email: str
     userConfig: list[str]
-
 
 class LoginResponse(BaseModel):
     message: str
@@ -205,10 +205,10 @@ class LoginResponse(BaseModel):
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", 
-                   "http:10.13.227.253:8000", 
-                   "http:10.13.227.253", 
+                   "http://10.13.227.253:8000", 
+                   "http://10.13.227.253", 
                    "http://localhost:8000", 
-                   "http://10.13.227.119:8000"],
+                   "http://10.13.226.247:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -292,8 +292,9 @@ def check_login(user_id: str, password: str, conn: pyodbc.Connection):
     finally:
         cursor.close()
         
+        
 # --- API ENDPOINTS ---
-
+    
 @app.get("/testconnection")
 def test_connection(conn: pyodbc.Connection = Depends(get_db_connection)):
     db_version = ""
@@ -415,12 +416,15 @@ def create_project(payload: ProjectPayload, conn: pyodbc.Connection = Depends(ge
 
 
 @app.get("/projects/details")
-def get_project_details(conn: pyodbc.Connection = Depends(get_db_connection)):
+def get_project_details(userId: str, conn: pyodbc.Connection = Depends(get_db_connection)):
     cursor = conn.cursor()
     try:
         cursor.execute("EXEC [Design_System].[dbo].[USP_PM_Get_Project_Detail]")
         columns = [col[0] for col in cursor.description]
         rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        
+        # log_daily(f'[{userId}] Get | Project detail successfully.')
+        
         return rows
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -429,7 +433,7 @@ def get_project_details(conn: pyodbc.Connection = Depends(get_db_connection)):
 
 
 @app.get("/projects/summary")
-def get_project_summary(conn: pyodbc.Connection = Depends(get_db_connection)):
+def get_project_summary(userId: str, conn: pyodbc.Connection = Depends(get_db_connection)):
     cursor = conn.cursor()
     try:
         cursor.execute("EXEC [Design_System].[dbo].[USP_PM_Get_Project_Summary]")
@@ -486,6 +490,8 @@ def get_project_summary(conn: pyodbc.Connection = Depends(get_db_connection)):
             counts['delayed_projects'] += 1
             counts['completed_projects'] += 1
 
+    # log_daily(f'[{userId}] Get | Project summary successfully.')
+    
     return counts
 
 
