@@ -8,8 +8,10 @@ import pic9 from '/src/assets/image_profile/pic9.jpg'
 import pic6 from '/src/assets/image_profile/pic6.jpg'
 import pic10 from '/src/assets/image_profile/pic10.jpg'
 import pic3 from '/src/assets/image_profile/pic3.jpg'
+import {getKpiSummary} from '../../services/projectService'
 
 // import pic04 from '/src/assets/image_profile/pic04.jpg'
+export const kpiSummaryData = getKpiSummary('admin')
 
 export const mockMembers = [
   {

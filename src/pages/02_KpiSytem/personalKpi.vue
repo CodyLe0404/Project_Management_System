@@ -68,10 +68,14 @@
 
 <script setup>
 import { ref } from 'vue';
-import { mockMembers } from '../../components/KPI_System/mockData.js';
+import { mockMembers, kpiSummaryData } from '../../components/KPI_System/mockData.js';
 import DashboardOverview from '../../components/KPI_System/DashboardOverview.vue';
 import MemberList from '../../components/KPI_System/MemberList.vue';
 import MemberDetailModal from '../../components/KPI_System/MemberDetailModal.vue';
+
+//Testing data get from API
+const kpi_data = ref(kpiSummaryData)
+console.log(kpi_data)
 
 // 1. Core State
 const members = ref(mockMembers);
