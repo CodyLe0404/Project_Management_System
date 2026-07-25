@@ -139,18 +139,17 @@ export async function changeUserPassword({ userId, currentPassword, newPassword 
   return await response.json()
 }
 
-export async function getKpiSummary(userId) {
 
-  const response = await fetch(`${API_BASE}/kpi/summary?userId=${userId}`)
+export async function getPersonalKpiSummary() {
+  const response = await fetch(`${API_BASE}/kpi/personal`)
 
   if (!response.ok) {
-
     const text = await response.text()
-
     throw new Error(
-      `Failed to load KPI summary data: ${response.status} ${text}`
+      `Failed to load personal KPI summary data: ${response.status} ${text}`
     )
   }
 
   return await response.json()
 }
+

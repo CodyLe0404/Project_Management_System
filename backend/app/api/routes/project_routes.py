@@ -71,6 +71,7 @@ def change_user_password(request: ChangePasswordRequest, service: ProjectService
         raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
 
 
-@router.get("/kpi/summary")
-def get_kpi_summary(service: ProjectService = Depends(get_project_service)) -> list[dict]:
-    return service.get_kpi_summary()
+@router.get("/kpi/personal")
+def get_personal_kpi(service: ProjectService = Depends(get_project_service)) -> list[dict]:
+    return service.get_personal_kpi_summary()
+

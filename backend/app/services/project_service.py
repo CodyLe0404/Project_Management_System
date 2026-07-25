@@ -6,6 +6,7 @@ from typing import Any
 from app.core.exceptions import ServiceError
 from app.core.middleware import log_daily
 from app.repositories.project_repository import ProjectRepository
+from app.services.personal_kpi_builder import PersonalKPIBuilder
 from app.utils.security import decrypt_password, encrypt_password
 
 
@@ -183,8 +184,10 @@ class ProjectService:
         log_daily(f"[{user_id}] Change Password | Failed to change password: {message}")
         raise ServiceError(message, status_code=400)
 
-    def get_kpi_summary(self) -> list[dict[str, Any]]:
-        return self.repository.get_kpi_summary()
+    def get_personal_kpi_summary(self) -> list[dict[str, Any]]:
+        raw_data = self.repository.get_kpi_summary()
+        builder = PersonalKPIBuilder()
+        return builder.build(raw_data)
 
     @staticmethod
     def _parse_datetime(value: str | None) -> datetime | None:
