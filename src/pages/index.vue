@@ -402,10 +402,10 @@ const getRangesChartConfig = () => {
   return {
     type: 'bar',
     data: {
-      labels: ['1% - 25%', '26% - 50%', '51% - 75%', '76% - 99%', '100%'],
+      labels: ['0%', '1% - 25%', '26% - 50%', '51% - 75%', '76% - 99%', '100%'],
       datasets: [{
         label: 'Task Count',
-        data: [s.per_1_25, s.per_26_50, s.per_51_75, s.per_76_99, s.per_100],
+        data: [s.not_started, s.per_1_25, s.per_26_50, s.per_51_75, s.per_76_99, s.per_100],
         backgroundColor: isDark ? 'rgba(99, 102, 241, 0.85)' : 'rgba(79, 70, 229, 0.9)', // Indigo theme bar
         hoverBackgroundColor: isDark ? '#818cf8' : '#4338ca',
         borderRadius: 8,
