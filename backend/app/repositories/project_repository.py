@@ -166,3 +166,14 @@ class ProjectRepository:
             return [dict(zip(columns, row)) for row in cursor.fetchall()]
         finally:
             cursor.close()
+
+    def get_dashboard_summary(self) -> list[dict[str, Any]]:
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute("EXEC [Design_System].[dbo].[USP_PM_Dashboard_Summary]")
+            columns = [col[0] for col in cursor.description]
+            return [dict(zip(columns, row)) for row in cursor.fetchall()]
+        finally:
+            cursor.close()
+    
+        
