@@ -83,6 +83,8 @@ registerAllModules()
 
 const authStore = useAuthStore();
 
+console.log("authStore")
+console.log(authStore.user.userConfig)
 const hotContainer = ref(null)
 const searchInput = ref(null)
 const tableData = ref([])
@@ -168,7 +170,7 @@ const loadData = async () => {
   try {
     deletedItemIds = []
     const rawData = await getProjectsDetails(authStore.user.userId)
-    console.log(rawData)
+    // console.log(rawData)
 
     tableData.value = buildProjectRows(rawData || [])
     changedRows.clear()
@@ -358,27 +360,28 @@ const loadData = async () => {
           const cellProperties = {}
 
           const rowData = this.instance.getSourceDataAtRow(row)
-
-          // if (rowData?.is_header) {
-          //   cellProperties.className = 'project-header-row'
-
-          //   const prop = this.instance.colToProp(col)
-          //   // Allow editing of both 'main_task' and 'actual_cost' in the header row
-          //   if (prop === 'main_task') {
-          //     cellProperties.readOnly = false
-          //   } else if (prop !== 'actual_cost') {
-          //     cellProperties.readOnly = true
-          //   }
-          // }
+          const prop = this.instance.colToProp(col)
+          
+          // Check if user has the 'DS_PMS_PI_M' permission
+          const hasModifyPermission = authStore.user.userConfig.includes('DS_PMS_PI_M') || false
+          
+          // For Plan Start and Plan End columns:
+          // - If cell already has data and user doesn't have the special permission, make it read-only
+          // - If cell is empty, allow editing for everyone (to set the initial value)
+          if ((prop === 'plan_start' || prop === 'plan_end') && !hasModifyPermission) {
+            const cellValue = rowData ? rowData[prop] : null
+            // Only make read-only if there's already data in the cell
+            if (cellValue) {
+              cellProperties.readOnly = true
+            }
+          }
 
           if (rowData?.is_header) {
             cellProperties.className = 'project-header-row'
 
-            const prop = this.instance.colToProp(col)
-
             const editableColumns = ['main_task', 'budget', 'actual_cost', 'qty']
             cellProperties.readOnly = !editableColumns.includes(prop)
-        }
+          }
 
           return cellProperties
         },
@@ -447,7 +450,7 @@ const loadData = async () => {
               actual_end: newRow?.actual_end || null,
               order_no: newRow?.order_no + 1 || null
             }
-            console.log('Inserted Row Payload:', payloadRow)
+            // console.log('Inserted Row Payload:', payloadRow)
             insertedRows.push(payloadRow)
             insertedRowsToSave.push(payloadRow)
             insertedRowMap.set(newRowIndex, payloadRow)
@@ -709,9 +712,9 @@ function calculateDays(startDate, endDate) {
   const start = new Date(startDate)
   const end = new Date(endDate)
 
+  // Add 1 day to ensure that if start and end are the same date, it returns 1 day
   return Math.ceil(
-    (end - start) / (1000 * 60 * 60 * 24)
-  )
+    (end - start) / (1000 * 60 * 60 * 24)) + 1
 }
 
 function syncSummaryActualCost(headerRow, value) {
