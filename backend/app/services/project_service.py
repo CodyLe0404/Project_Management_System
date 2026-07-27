@@ -32,7 +32,7 @@ class ProjectService:
         if sp_message != "Project created successfully":
             raise ServiceError(sp_message, status_code=400)
         
-        log_daily(f"[{user_id}] Create | Project ID: {payload["general"]["no"]} | Project Name: {payload.general['projectName']} | Message: {sp_message}")
+        log_daily(f"[{user_id}] Create | Project ID: {payload["general"]["no"]} | Project Name: {payload["general"]["projectName"]} | Message: {sp_message}")
         
         rows: list[tuple[Any, ...]] = []
         for item in payload["items"]:
