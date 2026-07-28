@@ -83,8 +83,6 @@ registerAllModules()
 
 const authStore = useAuthStore();
 
-console.log("authStore")
-console.log(authStore.user.userConfig)
 const hotContainer = ref(null)
 const searchInput = ref(null)
 const tableData = ref([])
@@ -172,6 +170,16 @@ const loadData = async () => {
     const rawData = await getProjectsDetails(authStore.user.userId)
     // console.log(rawData)
 
+    // Store original values of plan_start and plan_end for all persisted rows (for permission checks)
+    if (rawData) {
+      rawData.forEach(row => {
+        if (row.id_item) { // Only for rows that came from the database
+          row._original_plan_start = row.plan_start
+          row._original_plan_end = row.plan_end
+        }
+      })
+    }
+    console.log(rawData)
     tableData.value = buildProjectRows(rawData || [])
     changedRows.clear()
     insertedRowsToSave = []
@@ -362,16 +370,18 @@ const loadData = async () => {
           const rowData = this.instance.getSourceDataAtRow(row)
           const prop = this.instance.colToProp(col)
           
-          // Check if user has the 'DS_PMS_PI_M' permission
+          // Check if user has the 'DS_PMS_PI_M' permission (manager permission)
           const hasModifyPermission = authStore.user.userConfig.includes('DS_PMS_PI_M') || false
           
-          // For Plan Start and Plan End columns:
-          // - If cell already has data and user doesn't have the special permission, make it read-only
-          // - If cell is empty, allow editing for everyone (to set the initial value)
+          // We track original values to allow editing unsaved changes even after they're entered
           if ((prop === 'plan_start' || prop === 'plan_end') && !hasModifyPermission) {
-            const cellValue = rowData ? rowData[prop] : null
-            // Only make read-only if there's already data in the cell
-            if (cellValue) {
+            // Always allow editing for new rows (no id_item)
+            const isNewRow = !rowData?.id_item
+
+            // This allows users to edit values they just entered (unsaved changes)
+            const isExistingRowWithOriginalData = rowData?.id_item && rowData?.[`_original_${prop}`]
+            
+            if (isExistingRowWithOriginalData) {
               cellProperties.readOnly = true
             }
           }
@@ -384,6 +394,20 @@ const loadData = async () => {
           }
 
           return cellProperties
+        },
+        // Hook that runs before a cell begins editing - final permission check
+        beforeBeginEditing(row, col, originalEvent, cellProperties) {
+          const prop = this.colToProp(col)
+          const rowData = this.getSourceDataAtRow(row)
+          const hasModifyPermission = authStore.user.userConfig.includes('DS_PMS_PI_M') || false
+          
+          // Only block if: row is persisted (has id_item) AND the cell originally had data when loaded from server
+          if ((prop === 'plan_start' || prop === 'plan_end') && !hasModifyPermission) {
+            if (rowData?.id_item && rowData?.[`_original_${prop}`]) {
+              return false // Prevent editing
+            }
+          }
+          return true // Allow editing
         },
         //id_item of any deleted rows for tracking
         beforeRemoveRow(index, amount) {
