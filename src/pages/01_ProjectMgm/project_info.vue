@@ -846,20 +846,12 @@ function buildProjectRows(rows) {
       plan_start: planStart,
       plan_end: planEnd,
 
-      plan_day: detailRows.reduce(
-        (sum, row) =>
-          sum + Number(row.plan_day || 0),
-        0
-      ),
+      plan_day: calculateDays(planStart, planEnd),
 
       actual_start: actualStart,
       actual_end: actualEnd,
 
-      actual_day: detailRows.reduce(
-        (sum, row) =>
-          sum + Number(row.actual_day || 0),
-        0
-      ),
+      actual_day: calculateDays(actualStart, actualEnd),
 
       weight: projectRows.reduce(
         (sum, row) =>
