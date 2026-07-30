@@ -179,7 +179,7 @@ const loadData = async () => {
         }
       })
     }
-    console.log(rawData)
+    
     tableData.value = buildProjectRows(rawData || [])
     changedRows.clear()
     insertedRowsToSave = []
@@ -818,8 +818,8 @@ function buildProjectRows(rows) {
 
     const detailRows = projectRows.map(row => ({
       ...row,
-      // status: getTaskStatus(row),
-      // percent: getRowProcess(row),
+      status: getTaskStatus(row),
+      percent: getRowProcess(row),
       plan_day: calculateDays(row.plan_start, row.plan_end),
       actual_day: calculateDays(row.actual_start, row.actual_end)
     }))
