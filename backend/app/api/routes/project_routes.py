@@ -72,8 +72,8 @@ def change_user_password(request: ChangePasswordRequest, service: ProjectService
 
 
 @router.get("/kpi/personal")
-def get_personal_kpi(service: ProjectService = Depends(get_project_service)) -> list[dict]:
-    return service.get_personal_kpi_summary()
+def get_personal_kpi(service: ProjectService = Depends(get_project_service)) -> dict:
+    return service.get_personal_kpi_data()
 
 
 @router.get("/dashboard/summary")

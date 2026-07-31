@@ -572,10 +572,12 @@ function getDisplayedRows() {
   return baseRows.filter(row => {
     const projectNumber = String(row.project_number || '').toLowerCase()
     const projectName = String(row.project_name || '').toLowerCase()
+    const mainTask = String(row.main_task || '').toLowerCase()
 
     return (
       projectNumber.includes(query) ||
-      projectName.includes(query)
+      projectName.includes(query)   ||
+      mainTask.includes(query)
     )
   })
 }

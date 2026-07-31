@@ -46,11 +46,11 @@
               {{ onTimePercentage }}%
             </div>
             <div class="text-xs text-slate-600 mt-1">
-              On-time + Ahead Tasks
+              On-time Tasks
             </div>
             <!-- Math Formula display requested in prompt -->
             <div class="text-[10px] font-mono text-slate-600 mt-2 bg-slate-100 p-1.5 rounded border border-slate-200 leading-relaxed">
-              &eta; = ((OnTime + Ahead) / Total) &times; 100
+              &eta; = (OnTime / Total) &times; 100
             </div>
           </div>
         </div>
@@ -113,7 +113,7 @@
 
     </div>
 
-    <!-- Global Project Summary Widget -->
+    <!-- Global Project Summary Widget
     <div class="bg-white/90 backdrop-blur-md border border-slate-200 rounded-2xl p-6 shadow-xl">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
@@ -126,9 +126,9 @@
         </div>
       </div>
 
-      <!-- Status Progress Bar Widget -->
+      Status Progress Bar Widget
       <div class="space-y-4">
-        <!-- Visual Multi-segment bar -->
+        Visual Multi-segment bar
         <div class="h-4 w-full bg-slate-100 rounded-full overflow-hidden flex border border-slate-200">
           <div
             v-for="status in statusList"
@@ -141,7 +141,7 @@
           </div>
         </div>
 
-        <!-- Legend and details Grid -->
+        Legend and details Grid
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 pt-2">
           <div 
             v-for="status in statusList" 
@@ -159,7 +159,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -170,8 +170,17 @@ const props = defineProps({
   members: {
     type: Array,
     required: true,
+  },
+  dashboardSummary: {
+    type: Object,
+    required: () => ({}),
   }
 });
+
+const test_data = props.dashboardSummary;
+console.log("dashboardSummary");
+console.log(test_data);
+
 
 // Configure custom badges and colors for each allowed project status
 const statusList = [

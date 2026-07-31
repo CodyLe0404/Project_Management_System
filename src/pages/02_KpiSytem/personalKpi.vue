@@ -30,19 +30,34 @@
       </div>
 
       <!-- Quick Action Summary Badges -->
-      <div class="flex items-center gap-2 text-xs">
+      <!-- <div class="flex items-center gap-2 text-xs">
         <span class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 font-medium">
           Vue 3 Composition API
         </span>
         <span class="px-3 py-1.5 rounded-lg bg-indigo-950/40 border border-indigo-500/30 text-indigo-400 font-medium">
           Tailwind CSS Styled
         </span>
+      </div> -->
+
+      <!-- Quick Summary Status -->
+      <div class="flex flex-wrap items-center gap-2 text-xs">
+        <span class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-medium shadow-sm">
+          Active User:
+        </span>
+        <span class="px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/50 text-indigo-600 dark:text-indigo-400 font-medium">
+          {{  authStore.user?.displayName || 'Guest User'  }}
+        </span>
       </div>
+
+
     </header>
 
     <!-- KPI Summary Cards & Status Registry -->
     <section class="relative z-10">
-      <DashboardOverview :members="members" />
+      <DashboardOverview 
+          :members="members" 
+          :dashboard-summary="dashboardSummary"
+          />
     </section>
 
     <!-- Member Directory with Grid/Table Views -->
@@ -68,16 +83,24 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useAuthStore } from '../../stores/auth';
+
 import { mockMembers, kpiSummaryData } from '../../components/KPI_System/mockData.js';
 import DashboardOverview from '../../components/KPI_System/DashboardOverview.vue';
 import MemberList from '../../components/KPI_System/MemberList.vue';
 import MemberDetailModal from '../../components/KPI_System/MemberDetailModal.vue';
+import { getDashboardSummary } from '../../services/projectService';
 
 //Testing data get from API
 const kpi_data = ref(kpiSummaryData)
+
 console.log(kpi_data)
 
-// 1. Core State
+const authStore = useAuthStore();
+
+const dashboardSummary = getDashboardSummary(authStore.user.userId)
+
+// 1. Core Statec 
 const members = ref(mockMembers);
 const isModalOpen = ref(false);
 const selectedMember = ref(mockMembers[0] || {});
