@@ -14,7 +14,7 @@ import { useAuthStore } from '../../stores/auth';
 const authStore = useAuthStore();
 
 // import pic04 from '/src/assets/image_profile/pic04.jpg'
-export const kpiSummaryData = getPersonalKpiSummary(authStore.user.userId)
+export const kpiDashboardSummary = getPersonalKpiSummary(authStore.user.userId)
 
 export const mockMembers = [
   {

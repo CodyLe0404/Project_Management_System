@@ -86,32 +86,25 @@
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../../stores/auth';
 
-import { mockMembers, kpiSummaryData } from '../../components/KPI_System/mockData.js';
+import { mockMembers, kpiDashboardSummary  } from '../../components/KPI_System/mockData.js';
 import DashboardOverview from '../../components/KPI_System/DashboardOverview.vue';
 import MemberList from '../../components/KPI_System/MemberList.vue';
 import MemberDetailModal from '../../components/KPI_System/MemberDetailModal.vue';
 import { getPersonalKpiSummary } from '../../services/projectService';
 
-//Testing data get from API
-const kpi_data = ref(kpiSummaryData)
-
-console.log(kpi_data)
 
 const authStore = useAuthStore();
 
+
 const dashboardSummary = ref({}); // Khởi tạo object rỗng
-const isLoaded = ref(false) // 🟢 Biến trạng thái kiểm tra đã tải xong chưa
+const isLoaded = ref(false) 
 
 onMounted(async () => {
   try {
-    if (authStore.user?.userId) {
-      // Chờ API chạy xong
-      const res = await getPersonalKpiSummary(authStore.user.userId)
-      dashboardSummary.value = res
-      
-      // 🟢 Bật cờ đánh dấu đã load xong -> Component con lúc này mới bắt đầu render!
-      isLoaded.value = true 
-    }
+    // const res = await getPersonalKpiSummary(authStore.user.userId)
+    const res = await kpiDashboardSummary
+    dashboardSummary.value = res
+    isLoaded.value = true 
   } catch (error) {
     console.error("Lỗi fetch data:", error)
   }

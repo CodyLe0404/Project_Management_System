@@ -199,11 +199,6 @@ const props = defineProps({
 
 const totalSummary = props.dashboardSummary.totalSummary || {};
 const personalKpiSummary = props.dashboardSummary.personalKpiSummary || {};
-const personalKpiDetail = props.dashboardSummary.personalKpiDetail || {};
-
-console.log("Dữ liệu totalSummary thực tế nhận được:", totalSummary);
-console.log("Dữ liệu personalKpiSummary thực tế nhận được:", personalKpiSummary);
-console.log("Dữ liệu personalKpiDetail thực tế nhận được:", personalKpiDetail);
 
 // Configure custom badges and colors for each allowed project status
 const statusList = [
