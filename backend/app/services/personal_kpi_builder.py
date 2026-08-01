@@ -40,7 +40,12 @@ class PersonalKPIBuilder:
             employee["statusCounter"][status] += 1
 
     def build(self, raw_data: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        total_projects = set()
+        total_main_tasks = set()
         for row in raw_data:
+            total_projects.add(row.get("project_id"))
+            total_main_tasks.add(row.get("main_task"))
+            
             assignee = row.get("assignee")
             if not assignee:
                 continue
@@ -72,7 +77,7 @@ class PersonalKPIBuilder:
         onTime = 0
         delay = 0
         ahead = 0
-        total_task = 0
+        total_subtask = 0
 
         for employee in self.employees.values():
             # Lấy statusCounter của từng nhân viên để code gọn và an toàn hơn
@@ -108,8 +113,8 @@ class PersonalKPIBuilder:
                     "mainTasksCount": len(employee["mainTasks"]),
                     "subTasksCount": employee["subTasksCount"],
                     "onTime": emp_on_time,
-                    "Doing": emp_doing,
-                    "delayed": emp_delay,
+                    "doing": emp_doing,
+                    "delay": emp_delay,
                     "ahead": emp_ahead,
                     "noPlan": emp_no_plan,
                     "notYetStart": emp_not_started,
@@ -123,7 +128,7 @@ class PersonalKPIBuilder:
             ahead += emp_ahead
             no_plan += emp_no_plan
             not_started += emp_not_started
-            total_task += emp_total_task
+            total_subtask += emp_total_task
 
         # 3. Tạo dict total_summary chứa kết quả tổng sau khi lặp xong
         total_summary = {
@@ -133,7 +138,9 @@ class PersonalKPIBuilder:
             "onTime": onTime,
             "delay": delay,
             "ahead": ahead,
-            "total_task": total_task,
+            "total_subtask": total_subtask,
+            "total_project": len(total_projects),
+            "total_main_task": len(total_main_tasks),
         }
             
             

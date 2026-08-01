@@ -185,7 +185,7 @@ class ProjectService:
         log_daily(f"[{user_id}] Change Password | Failed to change password: {message}")
         raise ServiceError(message, status_code=400)
 
-    def get_personal_kpi_data(self) -> list[dict[str, Any]]:
+    def get_personal_kpi_data(self) -> dict[str, Any]:
         raw_data = self.repository.get_kpi_personal_all_data()
         builder = PersonalKPIBuilder()
         personal_detail, total_summary = builder.build(raw_data)

@@ -61,29 +61,45 @@
         <div class="absolute -right-10 -top-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl group-hover:bg-indigo-500/20 transition-all duration-500"></div>
         
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-sm font-semibold text-slate-600 uppercase tracking-wider">Total Tasks Completed</h3>
+          <h3 class="text-sm font-semibold text-slate-600 uppercase tracking-wider">Total Tasks</h3>
           <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
             <i class="pi pi-check-circle text-lg"></i>
           </div>
         </div>
 
-        <div class="flex items-baseline gap-2">
+        <!-- <div class="flex items-baseline gap-2">
           <span class="text-4xl font-extrabold text-slate-900">{{ taskStats.total }}</span>
-          <span class="text-xs text-slate-600">total tasks across members</span>
-        </div>
+          <span class="text-xs text-slate-600">total subtasks across members</span>
+        </div> -->
 
         <div class="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
+          <div class="flex items-baseline gap-2">
+          <span class="text-4xl font-extrabold text-slate-900">{{ taskStats.total_subtask }}</span>
+          <span class="text-xs text-slate-600">subtasks</span>
+        </div>
           <div class="bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20">
-            <div class="text-emerald-600 font-bold text-sm">{{ taskStats.ahead }}</div>
-            <div class="text-[10px] text-slate-600">Ahead</div>
-          </div>
-          <div class="bg-blue-500/10 p-2 rounded-lg border border-blue-500/20">
-            <div class="text-blue-600 font-bold text-sm">{{ taskStats.onTime }}</div>
+            <div class="text-emerald-600 font-bold text-sm">{{ taskStats.onTime }}</div>
             <div class="text-[10px] text-slate-600">On Time</div>
           </div>
-          <div class="bg-rose-500/10 p-2 rounded-lg border border-rose-500/20">
-            <div class="text-rose-600 font-bold text-sm">{{ taskStats.delayed }}</div>
+
+          <div class="bg-blue-500/10 p-2 rounded-lg border border-blue-500/20">
+            <div class="text-blue-600 font-bold text-sm">{{ taskStats.doing }}</div>
+            <div class="text-[10px] text-slate-600">Doing</div>
+          </div>
+
+          <div class="bg-red-500/10 p-2 rounded-lg border border-red-500/20">
+            <div class="text-red-600 font-bold text-sm">{{ taskStats.delay }}</div>
             <div class="text-[10px] text-slate-600">Delayed</div>
+          </div>
+
+          <div class="bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
+            <div class="text-amber-600 font-bold text-sm">{{ taskStats.notStarted }}</div>
+            <div class="text-[10px] text-slate-600">Not Started</div>
+          </div>
+
+          <div class="bg-slate-500/10 p-2 rounded-lg border border-slate-500/20">
+            <div class="text-slate-600 font-bold text-sm">{{ taskStats.noPlan }}</div>
+            <div class="text-[10px] text-slate-600">No Plan</div>
           </div>
         </div>
       </div>
@@ -99,20 +115,23 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4 h-full">
+        <div class="grid grid-cols-3 gap-4 h-full">
           <div class="flex flex-col justify-center">
-            <span class="text-3xl font-extrabold text-slate-900">{{ members.length }}</span>
+            <span class="text-3xl font-extrabold text-slate-900">{{ personalKpiSummary.length }}</span>
             <span class="text-xs text-slate-600 mt-1">Active Members</span>
           </div>
           <div class="flex flex-col justify-center border-l border-slate-200 pl-4">
-            <span class="text-3xl font-extrabold text-slate-900">{{ totalUniqueProjects }}</span>
+            <span class="text-3xl font-extrabold text-slate-900">{{ taskStats.total_project }}</span>
             <span class="text-xs text-slate-600 mt-1">Unique Projects</span>
+          </div>
+          <div class="flex flex-col justify-center border-l border-slate-200 pl-4">
+            <span class="text-3xl font-extrabold text-slate-900">{{ taskStats.total_main_task }}</span>
+            <span class="text-xs text-slate-600 mt-1">Main Tasks</span>
           </div>
         </div>
       </div>
-
     </div>
-
+    
     <!-- Global Project Summary Widget
     <div class="bg-white/90 backdrop-blur-md border border-slate-200 rounded-2xl p-6 shadow-xl">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -164,7 +183,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { watch, computed } from 'vue';
 
 const props = defineProps({
   members: {
@@ -173,14 +192,18 @@ const props = defineProps({
   },
   dashboardSummary: {
     type: Object,
-    required: () => ({}),
+    required: false,    // Hoặc true tùy nhu cầu của bạn
+    default: () => ({}) // ✅ Đúng cú pháp gán default value cho Object/Array
   }
 });
 
-const test_data = props.dashboardSummary;
-console.log("dashboardSummary");
-console.log(test_data);
+const totalSummary = props.dashboardSummary.totalSummary || {};
+const personalKpiSummary = props.dashboardSummary.personalKpiSummary || {};
+const personalKpiDetail = props.dashboardSummary.personalKpiDetail || {};
 
+console.log("Dữ liệu totalSummary thực tế nhận được:", totalSummary);
+console.log("Dữ liệu personalKpiSummary thực tế nhận được:", personalKpiSummary);
+console.log("Dữ liệu personalKpiDetail thực tế nhận được:", personalKpiDetail);
 
 // Configure custom badges and colors for each allowed project status
 const statusList = [
@@ -194,28 +217,23 @@ const statusList = [
 
 // 1. Task Statistics Aggregator
 const taskStats = computed(() => {
-  let total = 0;
-  let ahead = 0;
-  let onTime = 0;
-  let delayed = 0;
+  const delay = totalSummary.delay || 0;
+  const doing = totalSummary.doing || 0;
+  const noPlan = totalSummary.no_plan || 0;
+  const notStarted = totalSummary.not_started || 0;
+  const onTime = totalSummary.onTime + totalSummary.ahead || 0;
+  const total_subtask = totalSummary.total_subtask ?? (delay + onTime + doing + noPlan + notStarted);
+  const total_main_task = totalSummary.total_main_task || 0;
+  const total_project = totalSummary.total_project || 0;
 
-  props.members.forEach(member => {
-    // Standard task counts per member
-    ahead += member.aheadOfSchedule || 0;
-    onTime += member.onTime || 0;
-    delayed += member.delayed || 0;
-  });
-
-  total = ahead + onTime + delayed;
-
-  return { total, ahead, onTime, delayed };
+  return { total_subtask, delay, doing, noPlan, notStarted, onTime, total_main_task, total_project };
 });
 
 // 2. Calculate Overall On-Time Percentage using requested formula
 const onTimePercentage = computed(() => {
   const stats = taskStats.value;
-  if (stats.total === 0) return 0;
-  const percentage = ((stats.onTime + stats.ahead) / stats.total) * 100;
+  if (stats.total_subtask === 0) return 0;
+  const percentage = (stats.onTime / stats.total_subtask) * 100;
   return Math.round(percentage);
 });
 

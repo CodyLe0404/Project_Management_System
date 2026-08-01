@@ -55,9 +55,10 @@
     <!-- KPI Summary Cards & Status Registry -->
     <section class="relative z-10">
       <DashboardOverview 
-          :members="members" 
-          :dashboard-summary="dashboardSummary"
-          />
+        v-if="isLoaded"
+        :members="members" 
+        :dashboard-summary="dashboardSummary"
+      />
     </section>
 
     <!-- Member Directory with Grid/Table Views -->
@@ -82,14 +83,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../../stores/auth';
 
 import { mockMembers, kpiSummaryData } from '../../components/KPI_System/mockData.js';
 import DashboardOverview from '../../components/KPI_System/DashboardOverview.vue';
 import MemberList from '../../components/KPI_System/MemberList.vue';
 import MemberDetailModal from '../../components/KPI_System/MemberDetailModal.vue';
-import { getDashboardSummary } from '../../services/projectService';
+import { getPersonalKpiSummary } from '../../services/projectService';
 
 //Testing data get from API
 const kpi_data = ref(kpiSummaryData)
@@ -98,7 +99,23 @@ console.log(kpi_data)
 
 const authStore = useAuthStore();
 
-const dashboardSummary = getDashboardSummary(authStore.user.userId)
+const dashboardSummary = ref({}); // Khởi tạo object rỗng
+const isLoaded = ref(false) // 🟢 Biến trạng thái kiểm tra đã tải xong chưa
+
+onMounted(async () => {
+  try {
+    if (authStore.user?.userId) {
+      // Chờ API chạy xong
+      const res = await getPersonalKpiSummary(authStore.user.userId)
+      dashboardSummary.value = res
+      
+      // 🟢 Bật cờ đánh dấu đã load xong -> Component con lúc này mới bắt đầu render!
+      isLoaded.value = true 
+    }
+  } catch (error) {
+    console.error("Lỗi fetch data:", error)
+  }
+})
 
 // 1. Core Statec 
 const members = ref(mockMembers);
