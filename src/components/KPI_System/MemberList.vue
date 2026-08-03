@@ -259,7 +259,6 @@ const props = defineProps({
   }
 });
 
-console.log('Dashboard Summary:', props.dashboardSummary);
 const emit = defineEmits(['select-member']);
 
 const searchQuery = ref('');

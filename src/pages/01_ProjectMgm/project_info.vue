@@ -732,15 +732,69 @@ function getHeaderStatus(headerRow) {
   return getTaskStatus(headerRow)
 }
 
+function normalizeDateValue(value) {
+  if (!value) return null
+
+  const parsedDate = new Date(value)
+  if (Number.isNaN(parsedDate.getTime())) return null
+
+  parsedDate.setHours(0, 0, 0, 0)
+  return parsedDate
+}
+
+function formatDateKey(date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
 function calculateDays(startDate, endDate) {
-  if (!startDate || !endDate) return 0
+  const start = normalizeDateValue(startDate)
+  const end = normalizeDateValue(endDate)
 
-  const start = new Date(startDate)
-  const end = new Date(endDate)
+  if (!start || !end || end < start) return 0
 
-  // Add 1 day to ensure that if start and end are the same date, it returns 1 day
-  return Math.ceil(
-    (end - start) / (1000 * 60 * 60 * 24)) + 1
+  let count = 0
+  const current = new Date(start)
+
+  while (current <= end) {
+    const dayOfWeek = current.getDay()
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      count++
+    }
+
+    current.setDate(current.getDate() + 1)
+  }
+
+  return count
+}
+
+function calculateUniqueActiveDays(rows, startField, endField) {
+  if (!Array.isArray(rows) || !rows.length) return 0
+
+  const activeDates = new Set()
+
+  rows.forEach(row => {
+    const start = normalizeDateValue(row[startField])
+    const end = normalizeDateValue(row[endField])
+
+    if (!start || !end || end < start) return
+
+    const current = new Date(start)
+
+    while (current <= end) {
+      const dayOfWeek = current.getDay()
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        activeDates.add(formatDateKey(current))
+      }
+
+      current.setDate(current.getDate() + 1)
+    }
+  })
+
+  return activeDates.size
 }
 
 function syncSummaryActualCost(headerRow, value) {
@@ -848,19 +902,19 @@ function buildProjectRows(rows) {
       plan_start: planStart,
       plan_end: planEnd,
 
-      plan_day: detailRows.reduce(
-        (sum, row) =>
-          sum + Number(row.plan_day || 0),
-        0
+      plan_day: calculateUniqueActiveDays(
+        detailRows,
+        'plan_start',
+        'plan_end'
       ),
 
       actual_start: actualStart,
       actual_end: actualEnd,
 
-      actual_day: detailRows.reduce(
-        (sum, row) =>
-          sum + Number(row.actual_day || 0),
-        0
+      actual_day: calculateUniqueActiveDays(
+        detailRows,
+        'actual_start',
+        'actual_end'
       ),
 
       weight: projectRows.reduce(
