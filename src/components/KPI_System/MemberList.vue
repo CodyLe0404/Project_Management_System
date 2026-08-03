@@ -75,24 +75,11 @@
         <!-- Profile Header -->
         <div>
           <div class="flex items-start gap-4">
-            <img 
-              v-if="member.avatar" 
-              :src="member.avatar" 
-              :alt="member.name"
-              class="w-14 h-14 rounded-xl object-cover border border-slate-200"
-            />
-            <div 
-              v-else 
-              class="w-14 h-14 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold"
-            >
-              {{ member.name.substring(0, 2).toUpperCase() }}
-            </div>
-            
             <div class="flex-1 min-w-0">
               <h4 class="text-base font-bold text-slate-900 truncate group-hover:text-indigo-600 transition-colors">
                 {{ member.name }}
               </h4>
-              <p class="text-xs text-slate-600 truncate mt-0.5">{{ member.role }}</p>
+              <p class="text-xs text-slate-600 truncate mt-0.5">{{ member.title }} - {{ member.part }}</p>
               
               <!-- Task breakdown badge -->
               <div class="mt-2.5">
@@ -122,30 +109,23 @@
             <!-- Stacked bar -->
             <div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden flex border border-slate-200">
               <div 
-                v-if="member.aheadOfSchedule > 0"
-                class="h-full bg-emerald-500 transition-all"
-                :style="{ width: `${getTaskPercentage(member, 'aheadOfSchedule')}%` }"
-                title="Ahead of Schedule"
-              ></div>
-              <div 
-                v-if="member.onTime > 0"
+                v-if="(member.onTime || 0) + (member.ahead || 0) > 0"
                 class="h-full bg-blue-500 transition-all"
                 :style="{ width: `${getTaskPercentage(member, 'onTime')}%` }"
                 title="On Time"
               ></div>
               <div 
-                v-if="member.delayed > 0"
+                v-if="member.delay > 0"
                 class="h-full bg-rose-500 transition-all"
-                :style="{ width: `${getTaskPercentage(member, 'delayed')}%` }"
+                :style="{ width: `${getTaskPercentage(member, 'delay')}%` }"
                 title="Delayed"
               ></div>
             </div>
             
             <!-- Legend indicators -->
             <div class="flex justify-between items-center text-[10px] text-slate-500 pt-1">
-              <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Ahead ({{ member.aheadOfSchedule }})</span>
-              <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>On-Time ({{ member.onTime }})</span>
-              <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Delayed ({{ member.delayed }})</span>
+              <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>On-Time ({{ (member.onTime || 0) + (member.ahead || 0) }})</span>
+              <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Delayed ({{ member.delay || 0 }})</span>
             </div>
           </div>
           
@@ -153,7 +133,7 @@
           <div class="pt-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600">
             <span class="text-[11px] font-medium flex items-center gap-1">
               <i class="pi pi-folder text-slate-500"></i>
-              Projects: {{ member.projects?.length || 0 }}
+              Projects: {{ member.projectCount || 0 }}
             </span>
             <span class="text-indigo-400 group-hover:translate-x-1 transition-transform flex items-center gap-1 font-semibold text-[11px]">
               Details
@@ -191,21 +171,9 @@
               <!-- Profile cell -->
               <td class="py-4 px-6">
                 <div class="flex items-center gap-3">
-                  <img 
-                    v-if="member.avatar" 
-                    :src="member.avatar" 
-                    :alt="member.name"
-                    class="w-10 h-10 rounded-lg object-cover border border-slate-200"
-                  />
-                  <div 
-                    v-else 
-                    class="w-10 h-10 rounded-lg bg-indigo-500/10 text-indigo-600 font-bold flex items-center justify-center"
-                  >
-                    {{ member.name.substring(0, 2).toUpperCase() }}
-                  </div>
                   <div>
                     <h5 class="font-bold text-slate-900">{{ member.name }}</h5>
-                    <p class="text-xs text-slate-600">{{ member.role }}</p>
+                    <p class="text-xs text-slate-600">{{ member.title }} - {{ member.part }}</p>
                   </div>
                 </div>
               </td>
@@ -221,35 +189,29 @@
                   </span>
                 </div>
               </td>
-
+ 
               <!-- Custom Stacked Progress Bar Column -->
               <td class="py-4 px-6 min-w-[200px]">
                 <div class="space-y-1">
                   <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden flex border border-slate-200">
                     <div 
-                      v-if="member.aheadOfSchedule > 0"
-                      class="h-full bg-emerald-500"
-                      :style="{ width: `${getTaskPercentage(member, 'aheadOfSchedule')}%` }"
-                    ></div>
-                    <div 
-                      v-if="member.onTime > 0"
+                      v-if="(member.onTime || 0) + (member.ahead || 0) > 0"
                       class="h-full bg-blue-500"
                       :style="{ width: `${getTaskPercentage(member, 'onTime')}%` }"
                     ></div>
                     <div 
-                      v-if="member.delayed > 0"
+                      v-if="member.delay > 0"
                       class="h-full bg-rose-500"
-                      :style="{ width: `${getTaskPercentage(member, 'delayed')}%` }"
+                      :style="{ width: `${getTaskPercentage(member, 'delay')}%` }"
                     ></div>
                   </div>
                   <div class="flex justify-between items-center text-[10px] text-slate-500 font-medium">
-                    <span class="text-emerald-500 font-bold">{{ member.aheadOfSchedule }} Ahead</span>
-                    <span class="text-blue-500 font-bold">{{ member.onTime }} On-Time</span>
-                    <span class="text-rose-500 font-bold">{{ member.delayed }} Delayed</span>
+                    <span class="text-blue-500 font-bold">{{ (member.onTime || 0) + (member.ahead || 0) }} On-Time</span>
+                    <span class="text-rose-500 font-bold">{{ member.delay || 0 }} Delayed</span>
                   </div>
                 </div>
               </td>
-
+ 
               <!-- On-time % -->
               <td class="py-4 px-6 text-center font-bold">
                 <span 
@@ -259,10 +221,10 @@
                   {{ getMemberOnTimeRate(member) }}%
                 </span>
               </td>
-
+ 
               <!-- Projects Count -->
               <td class="py-4 px-6 text-center text-slate-700 font-semibold">
-                {{ member.projects?.length || 0 }}
+                {{ member.projectCount || 0 }}
               </td>
 
               <!-- Actions -->
@@ -286,12 +248,18 @@
 import { ref, computed } from 'vue';
 
 const props = defineProps({
-  members: {
-    type: Array,
+  dashboardSummary: {
+    type: Object,
     required: true,
+    default: () => ({
+      totalSummary: {},
+      personalKpiSummary: [],
+      personalKpiDetail: []
+    })
   }
 });
 
+console.log('Dashboard Summary:', props.dashboardSummary);
 const emit = defineEmits(['select-member']);
 
 const searchQuery = ref('');
@@ -301,19 +269,31 @@ const layoutMode = ref('grid');
 // List of all unique roles in the dataset
 const uniqueRoles = computed(() => {
   const roles = new Set();
-  props.members.forEach(m => roles.add(m.role));
+  const list = props.dashboardSummary?.personalKpiSummary || [];
+  list.forEach(m => {
+    if (m.title) roles.add(m.title);
+  });
   return Array.from(roles).sort();
 });
 
 // Search & Role filters
 const filteredMembers = computed(() => {
-  return props.members.filter(member => {
-    const matchesSearch = member.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-                          member.role.toLowerCase().includes(searchQuery.value.toLowerCase());
+  const list = props.dashboardSummary?.personalKpiSummary || [];
+  const filtered = list.filter(member => {
+    const matchesSearch = (member.name || '').toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+                          (member.title || '').toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+                          (member.part || '').toLowerCase().includes(searchQuery.value.toLowerCase());
     
-    const matchesRole = selectedRole.value === 'ALL' || member.role === selectedRole.value;
+    const matchesRole = selectedRole.value === 'ALL' || member.title === selectedRole.value;
     
     return matchesSearch && matchesRole;
+  });
+  
+  // Sort alphabetically A-Z by employee's name
+  return filtered.sort((a, b) => {
+    const nameA = (a.name || '').toLowerCase();
+    const nameB = (b.name || '').toLowerCase();
+    return nameA.localeCompare(nameB);
   });
 });
 
@@ -323,29 +303,36 @@ function emitSelect(member) {
 
 // Calculate individual member's On-Time percentage
 function getMemberOnTimeRate(member) {
-  const onTime = member.onTime || 0;
-  const ahead = member.aheadOfSchedule || 0;
-  const delayed = member.delayed || 0;
-  const total = onTime + ahead + delayed;
+  const onTimeCombined = (member.onTime || 0) + (member.ahead || 0);
+  const delay = member.delay || 0;
+  const total = onTimeCombined + delay;
   if (total === 0) return 0;
-  return Math.round(((onTime + ahead) / total) * 100);
+  return Math.round((onTimeCombined / total) * 100);
 }
 
 // Calculate individual segments in stacked bar
 function getTaskPercentage(member, type) {
-  const total = (member.onTime || 0) + (member.aheadOfSchedule || 0) + (member.delayed || 0);
+  const onTimeCombined = (member.onTime || 0) + (member.ahead || 0);
+  const delay = member.delay || 0;
+  const total = onTimeCombined + delay;
   if (total === 0) return 0;
-  return Math.round((member[type] / total) * 100);
+  
+  if (type === 'onTime') {
+    return Math.round((onTimeCombined / total) * 100);
+  } else if (type === 'delay') {
+    return Math.round((delay / total) * 100);
+  }
+  return 0;
 }
 
 // Colored indicator badge for different on-time threshold rates
 function getOnTimeColorClass(rate) {
   if (rate >= 90) {
-    return 'bg-emerald-950/40 text-emerald-400 border border-emerald-500/20';
+    return 'bg-emerald-950/0 text-emerald-500 border border-emerald-500/20';
   } else if (rate >= 75) {
-    return 'bg-blue-950/40 text-blue-400 border border-blue-500/20';
+    return 'bg-blue-950/0 text-blue-500 border border-blue-500/20';
   } else {
-    return 'bg-rose-950/40 text-rose-400 border border-rose-500/20';
+    return 'bg-rose-950/0 text-rose-500 border border-rose-500/20';
   }
 }
 </script>

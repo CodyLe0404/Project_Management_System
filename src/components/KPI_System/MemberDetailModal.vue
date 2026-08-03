@@ -13,7 +13,7 @@
 
       <!-- Modal Card -->
       <div 
-        class="relative w-full max-w-2xl bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 transform scale-100 flex flex-col max-h-[85vh]"
+        class="relative w-[98vw] max-w-[1800px] bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 transform scale-100 flex flex-col max-h-[85vh]"
         role="dialog"
         aria-modal="true"
       >
@@ -32,94 +32,152 @@
         <!-- Scrollable Content container -->
         <div class="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 pt-12">
           <!-- Member Profile Header -->
-          <div class="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left relative">
-            <div class="relative group">
-              <!-- Avatar circle -->
-              <img 
-                v-if="member.avatar" 
-                :src="member.avatar" 
-                :alt="member.name"
-                class="w-20 h-20 rounded-2xl object-cover border border-slate-700 shadow-md group-hover:scale-105 transition-transform duration-300"
-              />
-              <div 
-                v-else 
-                class="w-20 h-20 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-bold text-2xl shadow-md border border-slate-700"
-              >
-                {{ member.name.substring(0, 2).toUpperCase() }}
-              </div>
-              <span class="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-slate-900" title="Active"></span>
-            </div>
-
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left relative border-b border-slate-100 pb-5">
             <div>
-              <h2 class="text-2xl font-bold text-slate-900">{{ member.name }}</h2>
-              <p class="text-indigo-600 font-medium text-sm mt-0.5">{{ member.role }}</p>
-              <div class="mt-2 flex flex-wrap gap-2 justify-center sm:justify-start">
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                  On-Time Rate: {{ onTimePercentage }}%
-                </span>
-              </div>
+              <h2 class="text-2xl font-extrabold text-slate-900 flex items-center gap-2 justify-center sm:justify-start">
+                {{ member.name }}
+                <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full border border-white" title="Active"></span>
+              </h2>
+              <p class="text-indigo-600 font-semibold text-sm mt-1">{{ member.title }} — {{ member.part }}</p>
+            </div>
+            
+            <div class="flex items-center justify-center">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                On-Time Rate: {{ onTimePercentage }}%
+              </span>
             </div>
           </div>
 
-          <!-- Stats Segment -->
+          <!-- Top Section (KPI Summary) -->
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-center">
-              <span class="block text-xs text-slate-600">Main Tasks</span>
-              <span class="text-xl font-bold text-slate-900">{{ member.mainTasksCount || 0 }}</span>
+              <span class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Total Projects</span>
+              <span class="text-lg font-extrabold text-slate-900 mt-1 block">{{ member.projectCount || 0 }}</span>
             </div>
             <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-center">
-              <span class="block text-xs text-slate-600">Sub Tasks</span>
-              <span class="text-xl font-bold text-slate-900">{{ member.subTasksCount || 0 }}</span>
+              <span class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Main Tasks</span>
+              <span class="text-lg font-extrabold text-slate-900 mt-1 block">{{ member.mainTasksCount || 0 }}</span>
             </div>
-            <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3.5 text-center">
-              <span class="block text-xs text-emerald-400">Ahead</span>
-              <span class="text-xl font-bold text-emerald-300">{{ member.aheadOfSchedule || 0 }}</span>
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-center">
+              <span class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Subtasks</span>
+              <span class="text-lg font-extrabold text-slate-900 mt-1 block">{{ member.subTasksCount || 0 }}</span>
             </div>
-            <div class="bg-rose-500/10 border border-rose-500/20 rounded-xl p-3.5 text-center">
-              <span class="block text-xs text-rose-400">Delayed</span>
-              <span class="text-xl font-bold text-rose-300">{{ member.delayed || 0 }}</span>
+            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 text-center">
+              <span class="block text-[10px] font-semibold text-emerald-700 uppercase tracking-wider">On Time</span>
+              <span class="text-lg font-extrabold text-emerald-800 mt-1 block">{{ (member.onTime || 0) + (member.ahead || 0) }}</span>
+            </div>
+            
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-3.5 text-center">
+              <span class="block text-[10px] font-semibold text-blue-700 uppercase tracking-wider">Doing</span>
+              <span class="text-lg font-extrabold text-blue-800 mt-1 block">{{ member.doing || 0 }}</span>
+            </div>
+            <div class="bg-rose-50 border border-rose-200 rounded-xl p-3.5 text-center">
+              <span class="block text-[10px] font-semibold text-rose-700 uppercase tracking-wider">Delayed</span>
+              <span class="text-lg font-extrabold text-rose-800 mt-1 block">{{ member.delay || 0 }}</span>
+            </div>
+            <div class="bg-purple-50 border border-purple-200 rounded-xl p-3.5 text-center">
+              <span class="block text-[10px] font-semibold text-purple-700 uppercase tracking-wider">No Plan</span>
+              <span class="text-lg font-extrabold text-purple-800 mt-1 block">{{ member.noPlan || 0 }}</span>
+            </div>
+            <div class="bg-slate-100 border border-slate-200 rounded-xl p-3.5 text-center">
+              <span class="block text-[10px] font-semibold text-slate-600 uppercase tracking-wider">Not Yet Started</span>
+              <span class="text-lg font-extrabold text-slate-800 mt-1 block">{{ member.notYetStart || 0 }}</span>
             </div>
           </div>
 
-          <!-- Project Registry List -->
-          <div>
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-base font-bold text-slate-200">Allocated Project Portfolios</h3>
-              <span class="text-xs text-slate-400">Total Assigned: {{ member.projects?.length || 0 }}</span>
+          <!-- Bottom Section (KPI Detail Table) -->
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-base font-bold text-slate-900">Task Performance Details</h3>
+              <span class="text-xs text-slate-500 font-semibold">Total Items: {{ filteredDetails.length }}</span>
             </div>
             
             <div 
-              v-if="member.projects && member.projects.length > 0" 
-              class="divide-y divide-slate-200 bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden"
+              v-if="filteredDetails.length > 0" 
+              class="border border-slate-200 bg-white rounded-2xl overflow-hidden shadow-sm"
             >
-              <div 
-                v-for="project in member.projects" 
-                :key="project.projectName"
-                class="flex items-center justify-between p-4 hover:bg-slate-800/20 transition-colors"
-              >
-                <div class="flex items-center gap-3">
-                  <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-600">
-                    <i class="pi pi-folder text-sm"></i>
-                  </div>
-                  <span class="text-sm font-medium text-slate-900">{{ project.projectName }}</span>
-                </div>
-                <!-- Status Badge with custom coloring matching requested specifications -->
-                <span 
-                  class="px-3 py-1 rounded-full text-xs font-semibold border"
-                  :class="getProjectStatusStyles(project.projectStatus)"
-                >
-                  {{ project.projectStatus }}
-                </span>
+              <div class="overflow-x-auto">
+                <table class="min-w-max w-full table-auto border-collapse text-left">
+                  <thead>
+                    <tr class="border-b border-slate-200 bg-slate-50 text-[10px] font-bold text-slate-600 uppercase tracking-wider">
+                      <th class="py-3 px-4">Project ID & Name</th>
+                      <th class="py-3 px-4">Main Task</th>
+                      <th class="py-3 px-4">Sub Task</th>
+                      <th class="py-3 px-4 text-center">Progress</th>
+                      <th class="py-3 px-4 text-center">Status</th>
+                      <th class="py-3 px-4 text-right">Budget</th>
+                      <th class="py-3 px-4 text-right">Actual Cost</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100 text-xs">
+                    <tr 
+                      v-for="detail in filteredDetails" 
+                      :key="detail.id_item"
+                      class="hover:bg-slate-50 transition-colors"
+                    >
+                      <!-- Project ID & Name -->
+                      <td class="py-3 px-4">
+                        <div class="font-bold text-slate-900">#{{ detail.project_id }}</div>
+                        <div class="text-[10px] text-slate-500 truncate max-w-[200px]" :title="detail.project_name">
+                          {{ detail.project_name }}
+                        </div>
+                      </td>
+                      
+                      <!-- Main Task -->
+                      <td class="py-3 px-4 font-semibold text-slate-700">
+                        {{ detail.main_task }}
+                      </td>
+                      
+                      <!-- Sub Task -->
+                      <td class="py-3 px-4 text-slate-600 font-medium">
+                        {{ detail.sub_task }}
+                      </td>
+                      
+                      <!-- Progress -->
+                      <td class="py-3 px-4">
+                        <div class="flex items-center gap-2 justify-center">
+                          <div class="w-16 bg-slate-100 rounded-full h-1.5 border border-slate-200">
+                            <div 
+                              class="bg-indigo-600 h-1.5 rounded-full" 
+                              :style="{ width: `${detail.progress}%` }"
+                            ></div>
+                          </div>
+                          <span class="font-bold text-slate-700 text-[10px] w-8">{{ detail.progress }}%</span>
+                        </div>
+                      </td>
+                      
+                      <!-- Status -->
+                      <td class="py-3 px-4 text-center">
+                        <span 
+                          class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border"
+                          :class="getProjectStatusStyles(detail.status)"
+                        >
+                          {{ detail.status }}
+                        </span>
+                      </td>
+                      
+                      <!-- Budget -->
+                      <td class="py-3 px-4 text-right font-mono text-slate-700 font-medium">
+                        {{ formatCurrency(detail.budget) }}
+                      </td>
+                      
+                      <!-- Actual Cost -->
+                      <td class="py-3 px-4 text-right font-mono text-slate-700 font-medium">
+                        {{ formatCurrency(detail.actual_cost) }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
             
             <div 
               v-else 
-              class="bg-slate-50 border border-slate-200 rounded-2xl p-8 text-center text-slate-600 text-sm"
+              class="bg-slate-50 border border-slate-200 rounded-2xl p-8 text-center text-slate-500 text-sm"
             >
               <i class="pi pi-inbox text-3xl mb-2 block"></i>
-              No active projects assigned to this member.
+              No detailed task information found for this employee.
             </div>
           </div>
         </div>
@@ -139,7 +197,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
 
 const props = defineProps({
   isOpen: {
@@ -149,6 +207,15 @@ const props = defineProps({
   member: {
     type: Object,
     required: true,
+  },
+  dashboardSummary: {
+    type: Object,
+    required: true,
+    default: () => ({
+      totalSummary: {},
+      personalKpiSummary: [],
+      personalKpiDetail: []
+    })
   }
 });
 
@@ -158,59 +225,66 @@ function closeModal() {
   emit('close');
 }
 
-// Custom badges styling according to specs
-// - 'Ahead of schedule': Dark Green
-// - 'On Time': Blue
-// - 'Doing': Yellow
-// - 'Not yet start': Light Gray
-// - 'No plan': Purple
-// - 'Delay': Red
-function getProjectStatusStyles(status) {
-  switch (status) {
-    case 'Ahead of schedule':
-      return 'bg-emerald-100 text-emerald-700 border-emerald-300';
-    case 'On Time':
-      return 'bg-blue-100 text-blue-700 border-blue-300';
-    case 'Doing':
-      return 'bg-amber-100 text-amber-700 border-amber-300';
-    case 'Not yet start':
-      return 'bg-slate-100 text-slate-700 border-slate-200';
-    case 'No plan':
-      return 'bg-purple-100 text-purple-700 border-purple-300';
-    case 'Delay':
-      return 'bg-rose-100 text-rose-700 border-rose-300';
-    default:
-      return 'bg-slate-100 text-slate-700 border-slate-200';
+// Esc key binding
+const handleKeydown = (e) => {
+  if (e.key === 'Escape') {
+    closeModal();
   }
-}
+};
 
-// Calculate individual member's On-Time percentage
+onMounted(() => {
+  document.addEventListener('keydown', handleKeydown);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeydown);
+});
+
+// Calculate individual member's On-Time percentage (ahead combined into onTime)
 const onTimePercentage = computed(() => {
   if (!props.member) return 0;
   const onTime = props.member.onTime || 0;
-  const ahead = props.member.aheadOfSchedule || 0;
-  const delayed = props.member.delayed || 0;
-  const total = onTime + ahead + delayed;
+  const ahead = props.member.ahead || 0;
+  const delay = props.member.delay || 0;
+  const total = onTime + ahead + delay;
   if (total === 0) return 0;
   return Math.round(((onTime + ahead) / total) * 100);
 });
-</script>
 
-<script>
-// Expose functions for esc key bind
-export default {
-  mounted() {
-    document.addEventListener('keydown', this.handleKeydown);
-  },
-  unmounted() {
-    document.removeEventListener('keydown', this.handleKeydown);
-  },
-  methods: {
-    handleKeydown(e) {
-      if (e.key === 'Escape') {
-        this.$emit('close');
-      }
-    }
+// Filter details by assignee === userId or id
+const filteredDetails = computed(() => {
+  if (!props.member) return [];
+  const userId = props.member.userId;
+  const id = props.member.id;
+  const list = props.dashboardSummary?.personalKpiDetail || [];
+  return list.filter(detail => {
+    return (userId && detail.assignee === userId) || (id && detail.assignee === id);
+  });
+});
+
+// Format monetary values
+function formatCurrency(val) {
+  if (val === undefined || val === null) return '-';
+  const num = parseFloat(val);
+  if (isNaN(num)) return val;
+  return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
+}
+
+// Custom badges styling
+function getProjectStatusStyles(status) {
+  const s = (status || '').toLowerCase();
+  if (s === 'on time' || s === 'ahead' || s === 'ahead of schedule') {
+    return 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/50';
+  } else if (s === 'doing' || s === 'in progress') {
+    return 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/50';
+  } else if (s === 'delay' || s === 'delayed') {
+    return 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800/50';
+  } else if (s === 'not yet start' || s === 'not started') {
+    return 'bg-slate-50 text-slate-600 border border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800';
+  } else if (s === 'no plan') {
+    return 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800/50';
+  } else {
+    return 'bg-slate-50 text-slate-600 border border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800';
   }
 }
 </script>

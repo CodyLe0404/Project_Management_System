@@ -68,7 +68,8 @@
         <p class="text-xs text-slate-600">Select any team member card or table row below to explore their active project portfolios.</p>
       </div>
       <MemberList 
-        :members="members" 
+        v-if="isLoaded"
+        :dashboard-summary="dashboardSummary"
         @select-member="openMemberModal" 
       />
     </section>
@@ -77,16 +78,17 @@
     <MemberDetailModal 
       :is-open="isModalOpen" 
       :member="selectedMember" 
+      :dashboard-summary="dashboardSummary"
       @close="closeMemberModal" 
     />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useAuthStore } from '../../stores/auth';
 
-import { mockMembers, kpiDashboardSummary  } from '../../components/KPI_System/mockData.js';
+import { kpiDashboardSummary  } from '../../components/KPI_System/mockData.js';
 import DashboardOverview from '../../components/KPI_System/DashboardOverview.vue';
 import MemberList from '../../components/KPI_System/MemberList.vue';
 import MemberDetailModal from '../../components/KPI_System/MemberDetailModal.vue';
@@ -110,10 +112,16 @@ onMounted(async () => {
   }
 })
 
-// 1. Core Statec 
-const members = ref(mockMembers);
+// 1. Core State
+const members = computed(() => dashboardSummary.value.personalKpiSummary || []);
 const isModalOpen = ref(false);
-const selectedMember = ref(mockMembers[0] || {});
+const selectedMember = ref({});
+
+watch(() => dashboardSummary.value.personalKpiSummary, (newVal) => {
+  if (newVal && newVal.length > 0 && !selectedMember.value.userId) {
+    selectedMember.value = newVal[0];
+  }
+}, { immediate: true });
 
 // 2. Modal Controller
 function openMemberModal(member) {
