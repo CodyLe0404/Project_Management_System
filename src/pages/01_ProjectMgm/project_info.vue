@@ -760,10 +760,10 @@ function calculateDays(startDate, endDate) {
   const current = new Date(start)
 
   while (current <= end) {
-    const dayOfWeek = current.getDay()
-    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+    // const dayOfWeek = current.getDay()
+    // if (dayOfWeek !== 0 && dayOfWeek !== 6) {
       count++
-    }
+    // }
 
     current.setDate(current.getDate() + 1)
   }
@@ -785,10 +785,10 @@ function calculateUniqueActiveDays(rows, startField, endField) {
     const current = new Date(start)
 
     while (current <= end) {
-      const dayOfWeek = current.getDay()
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      // const dayOfWeek = current.getDay()
+      // if (dayOfWeek !== 0 && dayOfWeek !== 6) {
         activeDates.add(formatDateKey(current))
-      }
+      // }
 
       current.setDate(current.getDate() + 1)
     }
