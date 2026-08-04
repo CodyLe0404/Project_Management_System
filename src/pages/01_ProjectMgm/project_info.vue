@@ -14,14 +14,25 @@
   <section class="table-card">
     <!-- Toolbar -->
     <div class="toolbar">
-      <div class="toolbar-search-wrap">
-        <input
-          ref="searchInput"
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search Project"
-          class="search-input"
-        />
+      <div class="toolbar-search-group">
+        <div class="toolbar-search-wrap">
+          <input
+            ref="searchInput"
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search Project"
+            class="search-input"
+          />
+        </div>
+
+        <div class="toolbar-search-wrap">
+          <input
+            v-model="taskAssigneeQuery"
+            type="text"
+            placeholder="Search Main Task / Assignee"
+            class="search-input"
+          />
+        </div>
       </div>
 
       <button
@@ -88,6 +99,7 @@ const searchInput = ref(null)
 const tableData = ref([])
 const summaryTask = ref(false)
 const searchQuery = ref('')
+const taskAssigneeQuery = ref('')
 const isSaving = ref(false)
 
 let hot = null
@@ -190,6 +202,10 @@ const loadData = async () => {
     const projectNameWidth = getAutoFitColumnWidth(tableData.value, 'project_name')
     const mainTaskWidth = getAutoFitColumnWidth(tableData.value, 'main_task')
     const asssigneeWidth = getAutoFitColumnWidth(tableData.value, 'assignee')
+    const planStartWidth = getAutoFitColumnWidth(tableData.value, 'plan_start')
+    const planEndWidth = getAutoFitColumnWidth(tableData.value, 'plan_end')
+    const actualStartWidth = getAutoFitColumnWidth(tableData.value, 'actual_start')
+    const actualEndWidth = getAutoFitColumnWidth(tableData.value, 'actual_end')
 
     if (hot) {
       hot.destroy()
@@ -243,8 +259,8 @@ const loadData = async () => {
         fixedColumnsStart: 0,
 
         columnSorting: true,
-        filters: true,
-        dropdownMenu: true,
+        filters: false,
+        dropdownMenu: false,
         contextMenu: true,
 
         currentRowClassName: 'current-row',
@@ -306,13 +322,15 @@ const loadData = async () => {
             data: 'plan_start',
             type: 'date',
             dateFormat: 'YYYY-MM-DD',
-            correctFormat: true
+            correctFormat: true,
+            width: planStartWidth
           },
           {
             data: 'plan_end',
             type: 'date',
             dateFormat: 'YYYY-MM-DD',
-            correctFormat: true
+            correctFormat: true,
+            width: planEndWidth
           },
           {
             data: 'plan_day',
@@ -323,13 +341,15 @@ const loadData = async () => {
             data: 'actual_start',
             type: 'date',
             dateFormat: 'YYYY-MM-DD',
-            correctFormat: true
+            correctFormat: true,
+            width: actualStartWidth
           },
           {
             data: 'actual_end',
             type: 'date',
             dateFormat: 'YYYY-MM-DD',
-            correctFormat: true
+            correctFormat: true,
+            width: actualEndWidth
           },
           {
             data: 'actual_day',
@@ -562,26 +582,51 @@ const loadData = async () => {
 }
 
 function getDisplayedRows() {
-  const baseRows = summaryTask.value
-    ? tableData.value.filter(row => row.is_header)
-    : tableData.value
+  const result = []
+  const projectQuery = String(searchQuery.value || '').trim().toLowerCase()
+  const taskAssigneeQueryValue = String(taskAssigneeQuery.value || '').trim().toLowerCase()
 
-  const query = String(searchQuery.value || '').trim().toLowerCase()
-  if (!query) {
-    return baseRows
-  }
+  for (let index = 0; index < tableData.value.length; index++) {
+    const row = tableData.value[index]
+    if (!row?.is_header) {
+      continue
+    }
 
-  return baseRows.filter(row => {
+    const groupRows = []
+    let nextIndex = index + 1
+
+    while (nextIndex < tableData.value.length && !tableData.value[nextIndex].is_header) {
+      groupRows.push(tableData.value[nextIndex])
+      nextIndex++
+    }
+
     const projectNumber = String(row.project_number || '').toLowerCase()
     const projectName = String(row.project_name || '').toLowerCase()
-    const mainTask = String(row.main_task || '').toLowerCase()
+    const groupMainTask = String(row.main_task || '').toLowerCase()
+    const groupAssignee = String(row.assignee || '').toLowerCase()
 
-    return (
-      projectNumber.includes(query) ||
-      projectName.includes(query)   ||
-      mainTask.includes(query)
-    )
-  })
+    const matchesProjectQuery = !projectQuery || projectNumber.includes(projectQuery) || projectName.includes(projectQuery)
+    const matchesTaskAssigneeQuery = !taskAssigneeQueryValue || groupMainTask.includes(taskAssigneeQueryValue) || groupAssignee.includes(taskAssigneeQueryValue) || groupRows.some(detailRow => {
+      const detailMainTask = String(detailRow.main_task || '').toLowerCase()
+      const detailAssignee = String(detailRow.assignee || '').toLowerCase()
+      return detailMainTask.includes(taskAssigneeQueryValue) || detailAssignee.includes(taskAssigneeQueryValue)
+    })
+
+    if (!matchesProjectQuery || !matchesTaskAssigneeQuery) {
+      index = nextIndex - 1
+      continue
+    }
+
+    if (summaryTask.value) {
+      result.push(row)
+    } else {
+      result.push(row, ...groupRows)
+    }
+
+    index = nextIndex - 1
+  }
+
+  return result
 }
 
 function getAutoFitColumnWidth(rows, field, minWidth = 180, maxWidth = 420) {
@@ -628,13 +673,12 @@ watch(summaryTask, () => {
   }
 })
 
-watch(searchQuery, () => {
+watch([searchQuery, taskAssigneeQuery], () => {
   if (!hot) return
 
   clearTimeout(searchTimer)
   searchTimer = setTimeout(() => {
     hot.loadData(toRaw(getDisplayedRows()))
-    searchInput.value?.focus()
   }, 180)
 })
 
@@ -1035,11 +1079,18 @@ onMounted(async () => {
   border-bottom: 1px solid #e5e7eb;
 }
 
-.toolbar-search-wrap {
+.toolbar-search-group {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  width: min(420px, calc(100% - 240px));
+  display: flex;
+  gap: 12px;
+  width: min(860px, calc(100% - 240px));
+}
+
+.toolbar-search-wrap {
+  flex: 1;
+  min-width: 0;
 }
 
 .search-input {
