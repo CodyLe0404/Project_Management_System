@@ -96,63 +96,66 @@ let deletedItemIds = []
 let insertedRowsToSave = []
 const insertedRowMap = new Map()  // Keep newly inserted rows in a map so their values can be updated immediately as the user edits cells in Handsontable.
 
+const buildUpdatedPayload = () => {
+  const source = tableData.value.filter(
+    row => !row.is_header && row.id_item && changedRows.has(row.id_item)
+  )
+
+  return source.map(row => ({
+    item_id: row.id_item,
+    main_task: row.main_task || '',
+    sub_task: row.sub_task || '',
+    qty: row.qty || 0,
+    user_id: authStore.user.userId,
+    assignee: row.assignee || null,
+    process: getRowProcess(row) || 0,
+    status: getTaskStatus(row) || '',
+    plan_start: row.plan_start || null,
+    plan_end: row.plan_end || null,
+    actual_start: row.actual_start || null,
+    actual_end: row.actual_end || null,
+    actual_cost: row.actual_cost === '' ? null : Number(row.actual_cost),
+    remark: row.remark || ''
+  }))
+}
+
 const calculateAndSave = async () => {
-  if (isSaving.value) return
+  if (isSaving.value || !hot) return
+
+  const hasDeletes = deletedItemIds.length > 0
+  const hasInserts = insertedRowsToSave.length > 0
+  const hasUpdates = changedRows.size > 0
+
+  if (!hasDeletes && !hasInserts && !hasUpdates) {
+    alert('Saved successfully')
+    return
+  }
 
   try {
-    if (!hot) return
-
-    if (deletedItemIds.length) {
-      var remove_rows = deletedItemIds.join(',')
-
-      await deleteProjectRowData(remove_rows, authStore.user.userId)
-
-      deletedItemIds = []
-      
-      await loadData()
-    }
-
-    if (insertedRowsToSave.length) {
-      await insertProjectRowData(insertedRowsToSave)
-      insertedRowsToSave = []
-      await loadData()
-    }
-
-    if (!changedRows.size) {
-      alert('Saved successfully')
-      return
-    }
-
     isSaving.value = true
 
-    const source = tableData.value.filter(
-      row => !row.is_header && changedRows.has(row.id_item)
-    )
+    if (hasDeletes) {
+      const removeRows = deletedItemIds.join(',')
+      await deleteProjectRowData(removeRows, authStore.user.userId)
+    }
 
-    const payload = source.map(row => ({
-      item_id: row.id_item,
-      main_task: row.main_task || '',
-      sub_task: row.sub_task || '',
-      qty: row.qty || 0,
-      user_id: authStore.user.userId,
-      assignee: row.assignee || null,
-      process: getRowProcess(row) || 0,
-      status: getTaskStatus(row) || '',
-      plan_start: row.plan_start || null,
-      plan_end: row.plan_end || null,
-      actual_start: row.actual_start || null,
-      actual_end: row.actual_end || null,
-      actual_cost: row.actual_cost === '' ? null : Number(row.actual_cost),
-      remark: row.remark || ''
-    }))
+    if (hasInserts) {
+      await insertProjectRowData(insertedRowsToSave)
+    }
 
-    // console.log('Payload to save:', payload)
-
-    await saveProjectItems(payload)
+    if (hasUpdates) {
+      const payload = buildUpdatedPayload()
+      if (payload.length) {
+        await saveProjectItems(payload)
+      }
+    }
 
     alert('Saved successfully')
     changedRows.clear()
-    
+    deletedItemIds = []
+    insertedRowsToSave = []
+    insertedRowMap.clear()
+
     await loadData()
   }
   catch (error) {
@@ -166,7 +169,6 @@ const calculateAndSave = async () => {
 
 const loadData = async () => {
   try {
-    deletedItemIds = []
     const rawData = await getProjectsDetails(authStore.user.userId)
     // console.log(rawData)
 
