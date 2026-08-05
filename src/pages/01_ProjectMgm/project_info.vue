@@ -450,8 +450,7 @@ const loadData = async () => {
           return true
         },
         afterCreateRow(index, amount) {
-          const insertedRows = []
-
+          // const insertedRows = []
           for (let i = 0; i < amount; i++) {
             const newRowIndex = index + i
             const previousRow = this.getSourceDataAtRow(newRowIndex - 1)
@@ -486,6 +485,8 @@ const loadData = async () => {
               main_task: newRow?.main_task || '',
               sub_task: newRow?.sub_task || '',
               assignee: newRow?.assignee || '',
+              percent: getRowProcess(newRow) || 0,
+              status: getTaskStatus(newRow) || '',
               qty: newRow?.qty || 0,
               budget: newRow?.budget || 0,
               actual_cost: newRow?.actual_cost || 0,
@@ -494,10 +495,11 @@ const loadData = async () => {
               plan_end: newRow?.plan_end || null,
               actual_start: newRow?.actual_start || null,
               actual_end: newRow?.actual_end || null,
-              order_no: newRow?.order_no + 1 || null
+              order_no: newRow?.order_no + 1 || null,
+              remark: newRow?.remark || ''
             }
             // console.log('Inserted Row Payload:', payloadRow)
-            insertedRows.push(payloadRow)
+            // insertedRows.push(payloadRow)
             insertedRowsToSave.push(payloadRow)
             insertedRowMap.set(newRowIndex, payloadRow)
           }
@@ -557,17 +559,31 @@ const loadData = async () => {
               return
             }
 
-            const rowKey = row  //uses the row index as the lookup key.
-            const insertedRow = insertedRowMap.get(rowKey)  //checks whether that row was previously created as a new
+            const rowKey = row  // uses the row index as the lookup key.
+            const insertedRow = insertedRowMap.get(rowKey)  // checks whether that row was previously created as a new
 
-            if (insertedRow) {        //If the row exists in the map, it immediately updates the matching field
+            if (insertedRow) {        // If the row exists in the map, it immediately updates the matching field
               insertedRow[prop] = newValue        // writes the new cell value into the saved object
-              insertedRow.user_id = authStore.user.userId       //ensures the row also has the current user ID
+              insertedRow.user_id = authStore.user.userId       // ensures the row also has the current user ID
+
+              if (['plan_start', 'plan_end', 'actual_start', 'actual_end'].includes(prop)) {
+                insertedRow.percent = getRowProcess(insertedRow)
+                insertedRow.status = getTaskStatus(insertedRow)
+                this.setDataAtRowProp(row, 'percent', insertedRow.percent)
+                this.setDataAtRowProp(row, 'status', insertedRow.status)
+              }
+
               return        //stops the rest of the change handling, so this inserted row is not treated like a normal existing row.
             }
 
             // For normal row if the row has an item ID and the value really changed, record this row as modified
             if (rowData.id_item && oldValue !== newValue) {
+              if (['plan_start', 'plan_end', 'actual_start', 'actual_end'].includes(prop)) {
+                const percent = getRowProcess(rowData)
+                const status = getTaskStatus(rowData)
+                this.setDataAtRowProp(row, 'percent', percent)
+                this.setDataAtRowProp(row, 'status', status)
+              }
               changedRows.add(rowData.id_item)
             }
           })
@@ -920,8 +936,8 @@ function buildProjectRows(rows) {
 
     const detailRows = projectRows.map(row => ({
       ...row,
-      status: getTaskStatus(row),
-      percent: getRowProcess(row),
+      // status: getTaskStatus(row),
+      // percent: getRowProcess(row),
       plan_day: calculateDays(row.plan_start, row.plan_end),
       actual_day: calculateDays(row.actual_start, row.actual_end)
     }))

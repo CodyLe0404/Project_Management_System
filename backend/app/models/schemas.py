@@ -44,11 +44,14 @@ class InsertRowRequest(BaseModel):
     budget: Optional[float] = None
     actual_cost: Optional[float] = None
     assignee: Optional[str] = None
+    percent: Optional[float] = None
+    status: Optional[str] = None
     plan_start: Optional[date] = None
     plan_end: Optional[date] = None
     actual_start: Optional[date] = None
     actual_end: Optional[date] = None
     order_no: Optional[int] = None
+    remark: Optional[str] = None
 
 
 class LoginRequest(BaseModel):
