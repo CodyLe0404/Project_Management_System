@@ -108,6 +108,16 @@ let deletedItemIds = []
 let insertedRowsToSave = []
 const insertedRowMap = new Map()  // Keep newly inserted rows in a map so their values can be updated immediately as the user edits cells in Handsontable.
 
+const getDeleteCount = () => new Set(deletedItemIds).size
+
+const confirmDeleteRows = (count) => {
+  const message = count > 1
+    ? `Bạn đang thực hiện xóa ${count} rows. Continue?`
+    : 'Bạn đang thực hiện xóa 1 row. Continue?'
+
+  return window.confirm(message)
+}
+
 const buildUpdatedPayload = () => {
   const source = tableData.value.filter(
     row => !row.is_header && row.id_item && changedRows.has(row.id_item)
@@ -147,8 +157,19 @@ const calculateAndSave = async () => {
     isSaving.value = true
 
     if (hasDeletes) {
+      const deleteCount = getDeleteCount()
+      const confirmed = confirmDeleteRows(deleteCount)
+      if (!confirmed) {
+        return
+      }
+
       const removeRows = deletedItemIds.join(',')
-      await deleteProjectRowData(removeRows, authStore.user.userId)
+      if (deletedItemIds.length >= 500) {
+        alert(`⚠️Quá nhiều dữ liệu được xóa cùng lúc. Vui lòng xóa dữ liệu theo từng nhóm nhỏ hơn 500 rows!`)
+      }
+      else{
+        await deleteProjectRowData(removeRows, authStore.user.userId)
+      }
     }
 
     if (hasInserts) {
