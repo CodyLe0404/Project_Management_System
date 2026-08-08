@@ -27,6 +27,7 @@
 
         <div class="toolbar-search-wrap">
           <input
+            ref="taskAssigneeInput"
             v-model="taskAssigneeQuery"
             type="text"
             placeholder="Search Main Task / Assignee"
@@ -52,12 +53,30 @@
           <h2>📊 Thông tin dự án</h2>
         </div>
 
-        <div class="summary-toggle-wrapper">
-          <span class="summary-toggle-title">Summary Task</span>
-          <label class="toggle-container">
-            <input type="checkbox" v-model="summaryTask" />
-            <span class="slider"></span>
-          </label>
+        <div class="view-switcher-wrapper">
+          <div class="view-switcher">
+            <button
+              type="button"
+              :class="{ active: viewMode === VIEW_MODES.PROJECT }"
+              @click="setViewMode(VIEW_MODES.PROJECT)"
+            >
+              Project Summary
+            </button>
+            <button
+              type="button"
+              :class="{ active: viewMode === VIEW_MODES.TASK }"
+              @click="setViewMode(VIEW_MODES.TASK)"
+            >
+              Task Summary
+            </button>
+            <button
+              type="button"
+              :class="{ active: viewMode === VIEW_MODES.FULL }"
+              @click="setViewMode(VIEW_MODES.FULL)"
+            >
+              Full Detail
+            </button>
+          </div>
         </div>
       </div>
 
@@ -96,11 +115,24 @@ const authStore = useAuthStore();
 
 const hotContainer = ref(null)
 const searchInput = ref(null)
+const taskAssigneeInput = ref(null)
 const tableData = ref([])
-const summaryTask = ref(false)
+const rawRows = ref([])
 const searchQuery = ref('')
 const taskAssigneeQuery = ref('')
 const isSaving = ref(false)
+
+const VIEW_MODES = {
+  PROJECT: 'project-summary',
+  TASK: 'task-summary',
+  FULL: 'full-detail'
+}
+
+const viewMode = ref(VIEW_MODES.FULL)
+
+const setViewMode = (mode) => {
+  viewMode.value = mode
+}
 
 let hot = null
 const changedRows = new Set()
@@ -215,7 +247,8 @@ const loadData = async () => {
       })
     }
     
-    tableData.value = buildProjectRows(rawData || [])
+    rawRows.value = rawData || []
+    tableData.value = buildProjectHierarchy(rawRows.value)
     changedRows.clear()
     insertedRowsToSave = []
     insertedRowMap.clear()
@@ -250,6 +283,11 @@ const loadData = async () => {
 
         manualColumnResize: true,
         manualRowResize: true,
+
+        hiddenColumns: {
+          columns: getHiddenColumns(),
+          indicators: true
+        },
 
         rowHeaders: true,
         colHeaders: [
@@ -288,6 +326,7 @@ const loadData = async () => {
         currentColClassName: 'current-col',
 
         outsideClickDeselects: false,
+        viewportRowRenderingOffset: 120,
 
         columns: [
           {
@@ -430,7 +469,13 @@ const loadData = async () => {
           }
 
           if (rowData?.is_header) {
-            cellProperties.className = 'project-header-row'
+            const headerTypeClass = rowData.rowType === 'project'
+              ? 'project-summary-row'
+              : rowData.rowType === 'task'
+                ? 'task-summary-row'
+                : 'project-header-row'
+
+            cellProperties.className = headerTypeClass
 
             const editableColumns = ['main_task', 'budget', 'actual_cost', 'qty']
             cellProperties.readOnly = !editableColumns.includes(prop)
@@ -619,51 +664,72 @@ const loadData = async () => {
 }
 
 function getDisplayedRows() {
-  const result = []
   const projectQuery = String(searchQuery.value || '').trim().toLowerCase()
   const taskAssigneeQueryValue = String(taskAssigneeQuery.value || '').trim().toLowerCase()
 
-  for (let index = 0; index < tableData.value.length; index++) {
-    const row = tableData.value[index]
-    if (!row?.is_header) {
-      continue
-    }
-
-    const groupRows = []
-    let nextIndex = index + 1
-
-    while (nextIndex < tableData.value.length && !tableData.value[nextIndex].is_header) {
-      groupRows.push(tableData.value[nextIndex])
-      nextIndex++
-    }
-
+  const matchesRow = (row) => {
     const projectNumber = String(row.project_number || '').toLowerCase()
     const projectName = String(row.project_name || '').toLowerCase()
-    const groupMainTask = String(row.main_task || '').toLowerCase()
-    const groupAssignee = String(row.assignee || '').toLowerCase()
+    const mainTask = String(row.main_task || '').toLowerCase()
+    const assignee = String(row.assignee || '').toLowerCase()
+    const subTask = String(row.sub_task || '').toLowerCase()
 
-    const matchesProjectQuery = !projectQuery || projectNumber.includes(projectQuery) || projectName.includes(projectQuery)
-    const matchesTaskAssigneeQuery = !taskAssigneeQueryValue || groupMainTask.includes(taskAssigneeQueryValue) || groupAssignee.includes(taskAssigneeQueryValue) || groupRows.some(detailRow => {
-      const detailMainTask = String(detailRow.main_task || '').toLowerCase()
-      const detailAssignee = String(detailRow.assignee || '').toLowerCase()
-      return detailMainTask.includes(taskAssigneeQueryValue) || detailAssignee.includes(taskAssigneeQueryValue)
-    })
+    const projectMatch = !projectQuery || projectNumber.includes(projectQuery) || projectName.includes(projectQuery)
+    const taskAssigneeMatch = !taskAssigneeQueryValue || mainTask.includes(taskAssigneeQueryValue) || assignee.includes(taskAssigneeQueryValue) || subTask.includes(taskAssigneeQueryValue)
 
-    if (!matchesProjectQuery || !matchesTaskAssigneeQuery) {
-      index = nextIndex - 1
+    return projectMatch && taskAssigneeMatch
+  }
+
+  const showProjectSummaries = viewMode.value === VIEW_MODES.PROJECT
+  const showTaskSummaries = viewMode.value === VIEW_MODES.TASK
+  const showFullDetail = viewMode.value === VIEW_MODES.FULL
+
+  const result = []
+  const visibleProjectIds = new Set()
+  const visibleTaskKeys = new Set()
+
+  for (const row of tableData.value) {
+    if (!matchesRow(row)) continue
+
+    visibleProjectIds.add(row.project_id)
+    visibleTaskKeys.add(`${row.project_id}__${row.main_task}`)
+  }
+
+  for (const row of tableData.value) {
+    const projectKey = String(row.project_id)
+    const taskKey = `${row.project_id}__${row.main_task}`
+    const visibleProject = visibleProjectIds.size === 0 || visibleProjectIds.has(projectKey)
+    const visibleTask = visibleTaskKeys.size === 0 || visibleTaskKeys.has(taskKey)
+
+    if (showProjectSummaries) {
+      if (row.rowType !== 'project') continue
+      if (!visibleProject) continue
+      result.push(row)
       continue
     }
 
-    if (summaryTask.value) {
+    if (showTaskSummaries) {
+      if (row.rowType === 'detail') continue
+      if (!visibleProject && !visibleTask) continue
       result.push(row)
-    } else {
-      result.push(row, ...groupRows)
+      continue
     }
 
-    index = nextIndex - 1
+    if (showFullDetail) {
+      if (!visibleProject && !visibleTask) continue
+      result.push(row)
+    }
   }
 
   return result
+}
+
+function getHiddenColumns() {
+  if (viewMode.value === VIEW_MODES.PROJECT) {
+    // return [3, 4, 5, 6, 7, 16, 17, 18]
+    return []
+  }
+  return []
 }
 
 function getAutoFitColumnWidth(rows, field, minWidth = 180, maxWidth = 420) {
@@ -704,18 +770,30 @@ function getStatusColumnWidth(rows) {
 
 let searchTimer = null
 
-watch(summaryTask, () => {
-  if (hot) {
-    hot.loadData(toRaw(getDisplayedRows()))
-  }
+watch(viewMode, () => {
+  if (!hot) return
+  hot.updateSettings({ hiddenColumns: { columns: getHiddenColumns(), indicators: true } })
+  hot.render()
 })
 
-watch([searchQuery, taskAssigneeQuery], () => {
+watch([viewMode, searchQuery, taskAssigneeQuery], () => {
   if (!hot) return
+
+  const activeElement = document.activeElement
+  const isActiveSearchInput = activeElement === searchInput.value || activeElement === taskAssigneeInput.value
+  const selectionStart = isActiveSearchInput ? activeElement.selectionStart : null
+  const selectionEnd = isActiveSearchInput ? activeElement.selectionEnd : null
 
   clearTimeout(searchTimer)
   searchTimer = setTimeout(() => {
     hot.loadData(toRaw(getDisplayedRows()))
+
+    if (isActiveSearchInput && activeElement) {
+      activeElement.focus()
+      if (selectionStart !== null && selectionEnd !== null) {
+        activeElement.setSelectionRange(selectionStart, selectionEnd)
+      }
+    }
   }, 180)
 })
 
@@ -734,17 +812,148 @@ function getRowProcess(row) {
     : 0
 }
 
-function getHeaderProcess(rows) {
-  if (!rows.length) {
-    return 0
+const STATUS_PRIORITY = {
+  Delay: 5,
+  'In Progress': 4,
+  Doing: 4,
+  'On Time': 3,
+  Completed: 2,
+  'Not yet start': 1,
+  'No plan': 0,
+  Pending: 0
+}
+
+function getStatusPriority(status) {
+  return STATUS_PRIORITY[status] ?? 0
+}
+
+function aggregateStatus(statuses) {
+  return statuses.reduce((best, current) => {
+    return getStatusPriority(current) > getStatusPriority(best) ? current : best
+  }, 'No plan')
+}
+
+function averagePercent(rows) {
+  const total = rows.reduce((sum, row) => sum + Number(row.percent || 0), 0)
+  return rows.length ? Math.round(total / rows.length) : 0
+}
+
+function buildRowSummary(sourceRows, rowType) {
+  const sample = sourceRows[0] || {}
+  const planStart = getMinDate(sourceRows, 'plan_start')
+  const planEnd = getMaxDate(sourceRows, 'plan_end')
+  const actualStart = getMinDate(sourceRows, 'actual_start')
+  const actualEnd = getMaxDate(sourceRows, 'actual_end')
+
+  const budget = sample.budget
+  const actualCost = sample.actualCost
+
+  const result = {
+    rowType,
+    is_header: true,
+    project_id: sample.project_id,
+    project_number: sample.project_number,
+    project_name: sample.project_name,
+    task_no: rowType === 'task' ? sample.task_no : '',
+    main_task: rowType === 'task' ? sample.main_task : '',
+    sub_task: rowType === 'task' ? sample.sub_task || '' : '',
+    qty: rowType === 'task' ? sourceRows.reduce((sum, row) => sum + Number(row.qty || 0), 0) : '',
+    assignee: rowType === 'task' ? sourceRows[0]?.assignee || '' : '',
+    percent: averagePercent(sourceRows),
+    status: aggregateStatus(sourceRows.map(row => getTaskStatus(row))),
+    plan_start: planStart,
+    plan_end: planEnd,
+    plan_day: calculateUniqueActiveDays(sourceRows, 'plan_start', 'plan_end'),
+    actual_start: actualStart,
+    actual_end: actualEnd,
+    actual_day: calculateUniqueActiveDays(sourceRows, 'actual_start', 'actual_end'),
+    budget: budget,
+    actual_cost: actualCost,
+    budget_variance: budget - actualCost,
+    remark: ''
   }
 
-  const total = rows.reduce(
-    (sum, row) => sum + Number(row.percent || 0),
-    0
-  )
+  if (rowType === 'project') {
+    const uniqueMainTaskCount = new Set(sourceRows.map(row => row.main_task).filter(Boolean)).size
+    const totalSubTaskCount = sourceRows.reduce((count, row) => count + (row.sub_task ? 1 : 0), 0)
 
-  return Math.round(total / rows.length)
+    result.main_task = `${uniqueMainTaskCount} main task`
+    result.sub_task = `${totalSubTaskCount} sub task`
+  }
+
+  return result
+}
+
+function buildProjectHierarchy(rows) {
+  const projectMap = new Map()
+
+  rows.forEach(row => {
+    const projectKey = row.project_id
+    const taskKey = `${row.project_id}__${row.main_task}`
+
+    if (!projectMap.has(projectKey)) {
+      projectMap.set(projectKey, {
+        project_id: row.project_id,
+        project_number: row.project_number,
+        project_name: row.project_name,
+        tasks: new Map(),
+        details: []
+      })
+    }
+
+    const project = projectMap.get(projectKey)
+    project.details.push(row)
+
+    if (!project.tasks.has(taskKey)) {
+      project.tasks.set(taskKey, {
+        taskKey,
+        main_task: row.main_task,
+        task_no: row.task_no,
+        assignee: row.assignee,
+        sub_task: row.sub_task,
+        details: []
+      })
+    }
+
+    project.tasks.get(taskKey).details.push(row)
+  })
+
+  const flattened = []
+
+  for (const project of projectMap.values()) {
+    const projectSummary = buildRowSummary(project.details, 'project')
+    projectSummary.project_id = project.project_id
+    projectSummary.project_number = project.project_number
+    projectSummary.project_name = project.project_name
+    flattened.push(projectSummary)
+
+    for (const task of project.tasks.values()) {
+      const taskSummary = buildRowSummary(task.details, 'task')
+      taskSummary.project_id = project.project_id
+      taskSummary.project_number = project.project_number
+      taskSummary.project_name = project.project_name
+      taskSummary.task_no = task.task_no
+      taskSummary.main_task = task.main_task
+      taskSummary.assignee = task.assignee || ''
+      taskSummary.sub_task = task.sub_task || ''
+      flattened.push(taskSummary)
+
+      task.details.forEach(detail => {
+        flattened.push({
+          ...detail,
+          rowType: 'detail',
+          is_header: false,
+          plan_day: calculateDays(detail.plan_start, detail.plan_end),
+          actual_day: calculateDays(detail.actual_start, detail.actual_end),
+          status: detail.status || getTaskStatus(detail),
+          percent: detail.percent === undefined ? getRowProcess(detail) : detail.percent,
+          budget_variance: Number(detail.budget || 0) - Number(detail.actual_cost || 0)
+        })
+      })
+    }
+  }
+
+  return flattened
 }
 
 function getMinDate(rows, field) {
@@ -902,135 +1111,6 @@ function syncSummaryActualCost(headerRow, value) {
   return affectedIds
 }
 
-function buildProjectRows(rows) {
-  const grouped = new Map()
-
-  rows.forEach(row => {
-    const key = `${row.project_id}_${row.task_no}_${row.main_task}`
-
-    if (!grouped.has(key)) {
-      grouped.set(key, [])
-    }
-
-    grouped.get(key).push(row)
-  })
-
-  const result = []
-
-  const currentGroups = Array.from(grouped.values())
-
-  // 3. Duyệt qua từng nhóm để tính toán dữ liệu hiển thị
-  currentGroups.forEach(projectRows => {
-    const firstRow = projectRows[0]
-
-    const planStart = getMinDate(
-      projectRows,
-      'plan_start'
-    )
-
-    const planEnd = getMaxDate(
-      projectRows,
-      'plan_end'
-    )
-
-    const actualStart = getMinDate(
-      projectRows,
-      'actual_start'
-    )
-
-    const actualEnd = getMaxDate(
-      projectRows,
-      'actual_end'
-    )
-
-    const budget = projectRows.reduce(
-      (sum, row) =>
-        sum + Number(row.budget || 0),
-      0
-    )
-
-    const actualCost = projectRows.reduce(
-      (sum, row) =>
-        sum + Number(row.actual_cost || 0),
-      0
-    )
-
-    const detailRows = projectRows.map(row => ({
-      ...row,
-      // status: getTaskStatus(row),
-      // percent: getRowProcess(row),
-      plan_day: calculateDays(row.plan_start, row.plan_end),
-      actual_day: calculateDays(row.actual_start, row.actual_end)
-    }))
-
-    const headerRow = {
-      is_header: true,
-
-      project_id: firstRow.project_id,
-      project_number: firstRow.project_number,
-      project_name: firstRow.project_name,
-      task_no : firstRow.task_no,
-      main_task: firstRow.main_task,
-
-      sub_task: 'Switchgears',
-
-      qty: firstRow.qty,
-
-      assignee: firstRow.assignee || "",
-
-      percent: getHeaderProcess(detailRows),
-
-      status: null,
-
-      plan_start: planStart,
-      plan_end: planEnd,
-
-      plan_day: calculateUniqueActiveDays(
-        detailRows,
-        'plan_start',
-        'plan_end'
-      ),
-
-      actual_start: actualStart,
-      actual_end: actualEnd,
-
-      actual_day: calculateUniqueActiveDays(
-        detailRows,
-        'actual_start',
-        'actual_end'
-      ),
-
-      weight: projectRows.reduce(
-        (sum, row) =>
-          sum + Number(row.weight || 0),
-        0
-      ),
-
-      contrib: projectRows.reduce(
-        (sum, row) =>
-          sum + Number(row.contrib || 0),
-        0
-      ),
-
-      budget: firstRow.budget,
-
-      actual_cost: firstRow.actual_cost,
-
-      budget_variance:
-        firstRow.budget - firstRow.actual_cost,
-
-      remark: ''
-    }
-
-    headerRow.status = getHeaderStatus(headerRow)
-
-    result.push(headerRow)
-    result.push(...detailRows)
-  })
-
-  return result
-}
-
 const hideRepeatedColumns = [
   'project_number',
   'project_name',
@@ -1053,10 +1133,10 @@ function hideRepeatedRenderer(
 ) {
   const rowData = instance.getSourceDataAtRow(row)
 
-  // Helper: format numeric values as USD currency
+  // Helper: format numeric values consistently, without blocking rendering.
   const currencyFormatter = (val) => {
     if (val === null || val === undefined || val === '') return ''
-    const normalized = String(val).toString().replace(/[^0-9.-]/g, '')
+    const normalized = String(val).replace(/[^0-9.-]/g, '')
     const num = Number(normalized)
     if (Number.isNaN(num)) return ''
     return new Intl.NumberFormat('en-US', {
@@ -1067,13 +1147,11 @@ function hideRepeatedRenderer(
     }).format(num)
   }
 
-  // If this is a detail row and the column is in hideRepeatedColumns, hide repeated values
-  if (rowData && !rowData.is_header && hideRepeatedColumns.includes(prop)) {
+  if (rowData?.rowType === 'detail' && hideRepeatedColumns.includes(prop)) {
     td.textContent = ''
     return td
   }
 
-  // Render currency columns with formatting
   if (['budget', 'actual_cost', 'budget_variance'].includes(prop)) {
     td.textContent = currencyFormatter(value)
     return td
@@ -1249,6 +1327,39 @@ onMounted(async () => {
   color: #111827;
 }
 
+.view-switcher-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.view-switcher {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.view-switcher button {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.view-switcher button:hover {
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+.view-switcher button.active {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: white;
+}
+
 .toggle-switch {
   width: 50px;
   height: 25px;
@@ -1365,10 +1476,19 @@ onMounted(async () => {
 }
 
 .handsontable .htCore .project-header-row {
-  background-color: #fff2cc !important;
-  font-weight: bold !important;
-}
+    background-color: #fff2cc !important;
+    font-weight: bold !important;
+  }
 
+  .handsontable .htCore .project-summary-row {
+    background-color: #e0f2fe !important;
+    font-weight: 700 !important;
+  }
+
+  .handsontable .htCore .task-summary-row {
+    background-color: #eef2ff !important;
+    font-weight: 600 !important;
+  }
 </style>
 
 <style>
