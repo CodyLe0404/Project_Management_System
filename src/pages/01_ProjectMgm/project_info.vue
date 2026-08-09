@@ -255,6 +255,7 @@ const loadData = async () => {
 
     const projectNameWidth = getAutoFitColumnWidth(tableData.value, 'project_name')
     const mainTaskWidth = getAutoFitColumnWidth(tableData.value, 'main_task')
+    const subtaskWidth = getAutoFitColumnWidth(tableData.value, 'sub_task')
     const asssigneeWidth = getAutoFitColumnWidth(tableData.value, 'assignee')
     const planStartWidth = getAutoFitColumnWidth(tableData.value, 'plan_start')
     const planEndWidth = getAutoFitColumnWidth(tableData.value, 'plan_end')
@@ -357,6 +358,7 @@ const loadData = async () => {
           },
           {
             data: 'sub_task',
+            width: subtaskWidth
             // readOnly: true
           },
           {
@@ -726,8 +728,8 @@ function getDisplayedRows() {
 
 function getHiddenColumns() {
   if (viewMode.value === VIEW_MODES.PROJECT) {
-    // return [3, 4, 5, 6, 7, 16, 17, 18]
-    return []
+    return [3, 7]
+    // return []
   }
   return []
 }
@@ -845,6 +847,17 @@ function buildRowSummary(sourceRows, rowType) {
   const actualStart = getMinDate(sourceRows, 'actual_start')
   const actualEnd = getMaxDate(sourceRows, 'actual_end')
 
+  const totalSubTasks = sourceRows.reduce((count, row) => count + (row.sub_task ? 1 : 0), 0)
+  const uniqueMainTaskCount = new Set(sourceRows.map(row => row.main_task).filter(Boolean)).size
+  const totalHeaderQty = Array.from(
+    sourceRows.reduce((map, row) => {
+      if (row.main_task && !map.has(row.main_task)) {
+        map.set(row.main_task, Number(row.qty || 0))
+      }
+      return map
+    }, new Map()).values()
+  ).reduce((sum, value) => sum + value, 0)
+
   const budget = sample.budget
   const actualCost = sample.actualCost
 
@@ -856,8 +869,8 @@ function buildRowSummary(sourceRows, rowType) {
     project_name: sample.project_name,
     task_no: rowType === 'task' ? sample.task_no : '',
     main_task: rowType === 'task' ? sample.main_task : '',
-    sub_task: rowType === 'task' ? sample.sub_task || '' : '',
-    qty: rowType === 'task' ? sourceRows.reduce((sum, row) => sum + Number(row.qty || 0), 0) : '',
+    sub_task: rowType === 'task' ? `${totalSubTasks} subtask` || '' : '',
+    qty: rowType === 'task' ? sample.qty || 0 : totalHeaderQty,
     assignee: rowType === 'task' ? sourceRows[0]?.assignee || '' : '',
     percent: averagePercent(sourceRows),
     status: aggregateStatus(sourceRows.map(row => getTaskStatus(row))),
@@ -874,11 +887,10 @@ function buildRowSummary(sourceRows, rowType) {
   }
 
   if (rowType === 'project') {
-    const uniqueMainTaskCount = new Set(sourceRows.map(row => row.main_task).filter(Boolean)).size
-    const totalSubTaskCount = sourceRows.reduce((count, row) => count + (row.sub_task ? 1 : 0), 0)
+    const totalSubTaskCount = totalSubTasks
 
     result.main_task = `${uniqueMainTaskCount} main task`
-    result.sub_task = `${totalSubTaskCount} sub task`
+    result.sub_task = `Total ${totalSubTaskCount} subtask`
   }
 
   return result
@@ -935,7 +947,7 @@ function buildProjectHierarchy(rows) {
       taskSummary.task_no = task.task_no
       taskSummary.main_task = task.main_task
       taskSummary.assignee = task.assignee || ''
-      taskSummary.sub_task = task.sub_task || ''
+      // taskSummary.sub_task = 'Switchgears'
       flattened.push(taskSummary)
 
       task.details.forEach(detail => {
@@ -1326,42 +1338,56 @@ onMounted(async () => {
   font-weight: 700;
   color: #111827;
 }
+/* Đảm bảo Header và cụm nút nằm cùng 1 hàng ngang */
+.card-header.header-with-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 
 .view-switcher-wrapper {
   display: flex;
   align-items: center;
 }
 
+/* Khung viền chung chứa 3 button */
 .view-switcher {
   display: inline-flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  background-color: #f3f4f6; /* Màu nền xám nhạt làm khung */
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
 }
 
+/* Kiểu dáng các button bên trong khung */
 .view-switcher button {
-  border: 1px solid #d1d5db;
-  background: #ffffff;
-  color: #374151;
-  padding: 8px 14px;
+  border: none;
+  background: transparent;
+  color: #4b5563;
+  padding: 8px 16px;
   border-radius: 999px;
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.2s ease;
+  font-size: 14px;
+  transition: all 0.15s ease-in-out;
+  white-space: nowrap;
 }
 
-.view-switcher button:hover {
-  border-color: #3b82f6;
-  color: #1d4ed8;
+/* Hiệu ứng khi rê chuột qua button chưa active */
+.view-switcher button:hover:not(.active) {
+  color: #111827;
+  background-color: rgba(255, 255, 255, 0.5);
 }
 
+/* Button đang được chọn (Active) */
 .view-switcher button.active {
-  background: #1d4ed8;
-  border-color: #1d4ed8;
-  color: white;
+  background-color: #1d4ed8; /* Màu xanh chủ đạo */
+  color: #ffffff;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
 }
 
 .toggle-switch {
-  width: 50px;
+  width: 40px;
   height: 25px;
   border-radius: 999px;
   border: none;
@@ -1490,62 +1516,3 @@ onMounted(async () => {
     font-weight: 600 !important;
   }
 </style>
-
-<style>
-    /* 1. Thiết lập vùng chứa bao quanh */
-    .toggle-container {
-      display: inline-block;
-      position: relative;
-      width: 48px;
-      height: 26px;
-    }
-
-    /* 2. Ẩn checkbox mặc định của trình duyệt */
-    .toggle-container input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    /* 3. Khung nền của Toggle (Trạng thái TẮT - Mặc định) */
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #cbd5e1; /* Màu xám nhạt */
-      border-radius: 999px; /* Bo tròn hoàn toàn */
-      transition: background-color 0.2s ease;
-    }
-
-    /* 4. Vòng tròn nhỏ bên trong */
-    .slider::before {
-      content: "";
-      position: absolute;
-      height: 20px;
-      width: 20px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      border-radius: 50%;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-      /* Tạo hiệu ứng di chuyển mượt mà */
-      transition: transform 0.2s ease;
-    }
-
-    /* 5. THAY ĐỔI KHI BẬT (Khi checkbox được check) */
-    
-    /* Đổi màu nền thành màu đen giống ảnh mẫu */
-    input:checked + .slider {
-      background-color: #063377; 
-    }
-
-    /* Dịch chuyển vòng tròn nhỏ sang bên phải */
-    input:checked + .slider::before {
-      /* Tổng chiều rộng 50px - nút tròn 22px - lề trái 3px = cách lề phải 3px.
-         Dịch chuyển chính xác 22px là vừa vặn nhất */
-      transform: translateX(22px);
-    }
-  </style>
