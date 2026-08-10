@@ -27,10 +27,19 @@
 
         <div class="toolbar-search-wrap">
           <input
-            ref="taskAssigneeInput"
-            v-model="taskAssigneeQuery"
+            ref="taskInput"
+            v-model="taskQuery"
             type="text"
-            placeholder="Search Main Task / Assignee"
+            placeholder="Search Main Task"
+            class="search-input"
+          />
+        </div>
+        <div class="toolbar-search-wrap">
+          <input
+            ref="assigneeInput"
+            v-model="assigneeQuery"
+            type="text"
+            placeholder="Search Assignee"
             class="search-input"
           />
         </div>
@@ -114,12 +123,14 @@ registerAllModules()
 const authStore = useAuthStore();
 
 const hotContainer = ref(null)
-const searchInput = ref(null)
-const taskAssigneeInput = ref(null)
 const tableData = ref([])
 const rawRows = ref([])
+const searchInput = ref(null)
+const taskInput = ref(null)
+const assigneeInput = ref(null)
 const searchQuery = ref('')
-const taskAssigneeQuery = ref('')
+const taskQuery = ref('')
+const assigneeQuery = ref('')
 const isSaving = ref(false)
 
 const VIEW_MODES = {
@@ -666,59 +677,132 @@ const loadData = async () => {
 }
 
 function getDisplayedRows() {
+  // 1. Normalize search queries
   const projectQuery = String(searchQuery.value || '').trim().toLowerCase()
-  const taskAssigneeQueryValue = String(taskAssigneeQuery.value || '').trim().toLowerCase()
+  const taskQueryValue = String(taskQuery.value || '').trim().toLowerCase()
+  const assigneeQueryValue = String(assigneeQuery.value || '').trim().toLowerCase()
 
-  const matchesRow = (row) => {
+  // 2. Identify projects that match project filter
+  const matchingProjectIds = new Set()
+
+  for (const row of tableData.value) {
+    const projectId = String(row.project_id ?? '')
     const projectNumber = String(row.project_number || '').toLowerCase()
     const projectName = String(row.project_name || '').toLowerCase()
-    const mainTask = String(row.main_task || '').toLowerCase()
-    const assignee = String(row.assignee || '').toLowerCase()
-    const subTask = String(row.sub_task || '').toLowerCase()
 
-    const projectMatch = !projectQuery || projectNumber.includes(projectQuery) || projectName.includes(projectQuery)
-    const taskAssigneeMatch = !taskAssigneeQueryValue || mainTask.includes(taskAssigneeQueryValue) || assignee.includes(taskAssigneeQueryValue) || subTask.includes(taskAssigneeQueryValue)
+    // No project filter -> all projects are valid
+    const projectMatches = !projectQuery || projectNumber.includes(projectQuery) || projectName.includes(projectQuery)
 
-    return projectMatch && taskAssigneeMatch
+    if (projectMatches) {
+      matchingProjectIds.add(projectId)
+    }
   }
 
-  const showProjectSummaries = viewMode.value === VIEW_MODES.PROJECT
-  const showTaskSummaries = viewMode.value === VIEW_MODES.TASK
-  const showFullDetail = viewMode.value === VIEW_MODES.FULL
+  // 3. Identify Main Task / Sub Task that match within the matching projects
+  const matchingTaskKeys = new Set()
 
-  const result = []
+  for (const row of tableData.value) {
+    const projectId = String(row.project_id ?? '')
+
+    // Skip rows belonging to non-matching projects
+    if (!matchingProjectIds.has(projectId)) {
+      continue
+    }
+
+    const mainTask = String(row.main_task || '').toLowerCase()
+    const subTask = String(row.sub_task || '').toLowerCase()
+
+    // Empty task filter -> all tasks are valid
+    const taskMatches = !taskQueryValue || mainTask.includes(taskQueryValue) || subTask.includes(taskQueryValue)
+    if (taskMatches) {
+      matchingTaskKeys.add(`${projectId}__${row.main_task}`)
+    }
+  }
+
+  // 4. Identify rows that satisfy ALL filters Project AND Main Task / Sub Task AND Assignee
+  const directlyMatchingRowIds = new Set()
+
+  for (const row of tableData.value) {
+    const projectId = String(row.project_id ?? '')
+    const taskKey = `${projectId}__${row.main_task}`
+    const assignee = String(row.assignee || '').toLowerCase()
+    const projectMatches = matchingProjectIds.has(projectId)
+    const taskMatches = matchingTaskKeys.has(taskKey)
+
+    const assigneeMatches = !assigneeQueryValue || assignee.includes(assigneeQueryValue)
+
+    if (projectMatches && taskMatches && assigneeMatches) {
+      const rowId = row.id_item || `${projectId}__${row.main_task}`
+      directlyMatchingRowIds.add(rowId)
+    }
+  }
+  
+  // 5. Build hierarchy from matching rows Matching Detail -> Matching Main Task -> Matching Project
   const visibleProjectIds = new Set()
   const visibleTaskKeys = new Set()
 
   for (const row of tableData.value) {
-    if (!matchesRow(row)) continue
+    const rowId =
+      row.id_item ||
+      `${String(row.project_id ?? '')}__${row.main_task}`
 
-    visibleProjectIds.add(row.project_id)
-    visibleTaskKeys.add(`${row.project_id}__${row.main_task}`)
+    if (!directlyMatchingRowIds.has(rowId)) {
+      continue
+    }
+
+    const projectId = String(row.project_id ?? '')
+    const taskKey = `${projectId}__${row.main_task}`
+
+    visibleProjectIds.add(projectId)
+    visibleTaskKeys.add(taskKey)
   }
 
+  // 6. View modes
+  const showProjectSummaries = viewMode.value === VIEW_MODES.PROJECT
+  const showTaskSummaries = viewMode.value === VIEW_MODES.TASK
+  const showFullDetail = viewMode.value === VIEW_MODES.FULL
+
+  // 7. Build final result
+  const result = []
   for (const row of tableData.value) {
-    const projectKey = String(row.project_id)
-    const taskKey = `${row.project_id}__${row.main_task}`
-    const visibleProject = visibleProjectIds.size === 0 || visibleProjectIds.has(projectKey)
-    const visibleTask = visibleTaskKeys.size === 0 || visibleTaskKeys.has(taskKey)
+    const projectId = String(row.project_id ?? '')
+    const taskKey = `${projectId}__${row.main_task}`
+    const visibleProject = visibleProjectIds.has(projectId)
+    const visibleTask = visibleTaskKeys.has(taskKey)
 
+    // PROJECT VIEW Only show project summary rows
     if (showProjectSummaries) {
-      if (row.rowType !== 'project') continue
-      if (!visibleProject) continue
+      if (row.rowType !== 'project') {
+        continue
+      }
+
+      if (!visibleProject) {
+        continue
+      }
+
       result.push(row)
       continue
     }
 
+    // TASK VIEW Show project + task summary rows - Only show tasks that match the filter
     if (showTaskSummaries) {
-      if (row.rowType === 'detail') continue
-      if (!visibleProject && !visibleTask) continue
+      if (row.rowType === 'detail') {
+        continue
+      }
+
+      if (!visibleProject || !visibleTask) {
+        continue
+      }
+
       result.push(row)
       continue
     }
 
+    // FULL VIEW Show project + task + detail rows belonging to matching Project / Task hierarchy
     if (showFullDetail) {
-      if (!visibleProject && !visibleTask) continue
+      if (!visibleProject || !visibleTask) {
+        continue
+      }
       result.push(row)
     }
   }
@@ -758,9 +842,7 @@ function getStatusColumnWidth(rows) {
   const context = canvas.getContext('2d')
   context.font = '14px Inter, sans-serif'
 
-  const values = rows
-    .map(row => row.status || '')
-    .concat('Status')
+  const values = rows.map(row => row.status || '').concat('Status')
 
   const maxWidth = values.reduce((max, value) => {
     const width = context.measureText(value).width
@@ -778,11 +860,13 @@ watch(viewMode, () => {
   hot.render()
 })
 
-watch([viewMode, searchQuery, taskAssigneeQuery], () => {
+watch([viewMode, searchQuery, taskQuery, assigneeQuery], () => {
   if (!hot) return
 
   const activeElement = document.activeElement
-  const isActiveSearchInput = activeElement === searchInput.value || activeElement === taskAssigneeInput.value
+  const isActiveSearchInput = activeElement === searchInput.value || 
+                              activeElement === taskInput.value || 
+                              activeElement === assigneeInput.value
   const selectionStart = isActiveSearchInput ? activeElement.selectionStart : null
   const selectionEnd = isActiveSearchInput ? activeElement.selectionEnd : null
 
@@ -812,27 +896,6 @@ function getRowProcess(row) {
   return hasPlanStart && hasPlanEnd && hasActualStart && hasActualEnd
     ? 100
     : 0
-}
-
-const STATUS_PRIORITY = {
-  Delay: 5,
-  'In Progress': 4,
-  Doing: 4,
-  'On Time': 3,
-  Completed: 2,
-  'Not yet start': 1,
-  'No plan': 0,
-  Pending: 0
-}
-
-function getStatusPriority(status) {
-  return STATUS_PRIORITY[status] ?? 0
-}
-
-function aggregateStatus(statuses) {
-  return statuses.reduce((best, current) => {
-    return getStatusPriority(current) > getStatusPriority(best) ? current : best
-  }, 'No plan')
 }
 
 function averagePercent(rows) {
@@ -873,7 +936,7 @@ function buildRowSummary(sourceRows, rowType) {
     qty: rowType === 'task' ? sample.qty || 0 : totalHeaderQty,
     assignee: rowType === 'task' ? sourceRows[0]?.assignee || '' : '',
     percent: averagePercent(sourceRows),
-    status: aggregateStatus(sourceRows.map(row => getTaskStatus(row))),
+    status: getHeaderStatus(planStart, planEnd, actualStart, actualEnd),
     plan_start: planStart,
     plan_end: planEnd,
     plan_day: calculateUniqueActiveDays(sourceRows, 'plan_start', 'plan_end'),
@@ -1028,12 +1091,33 @@ function getTaskStatus(row) {
   return 'Not yet start'
 }
 
-function getHeaderStatus(headerRow) {
-  if (!headerRow) {
-    return 'Pending'
+function getHeaderStatus(planStart, planEnd, actualStart, actualEnd) {
+  if (!planStart && !planEnd) {
+    return 'No plan'
   }
 
-  return getTaskStatus(headerRow)
+  if (!actualStart && !actualEnd) {
+    return 'Not yet start'
+  }
+
+  if (actualStart && !actualEnd) {
+    return 'Doing'
+  }
+
+  if (actualEnd) {
+    if (planEnd && actualEnd > planEnd) {
+      return 'Delay'
+    }
+
+    if (planEnd && actualEnd < planEnd) {
+      // return 'Ahead of schedule'
+      return 'On Time'
+    }
+
+    return 'On Time'
+  }
+
+  return 'Not yet start'
 }
 
 function normalizeDateValue(value) {
@@ -1196,10 +1280,8 @@ onMounted(async () => {
   justify-content: flex-end;
   position: relative;
   gap: 16px;
-
   position: sticky;
   top: 0;
-
   z-index: 100;
   background: white;
   padding: 10px 1px;
@@ -1211,8 +1293,8 @@ onMounted(async () => {
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 12px;
-  width: min(860px, calc(100% - 240px));
+  gap: 6px;
+  width: min(1100px, calc(100% - 500px));
 }
 
 .toolbar-search-wrap {
