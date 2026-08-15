@@ -76,17 +76,19 @@
 
     <!-- Project Data Portfolio Registry -->
     <DeptProjectTable 
-      :filtered-projects="filteredProjects"
-      :active-tab="activeTab"
+      v-if="isLoaded"
+        :filtered-projects="filteredProjects"
+        :kpi-dashboard-summary="kpiDashboardSummary"
+        :active-tab="activeTab"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue'
 import { useAuthStore } from '../../stores/auth';
 
-// Split Child Components imports
+import { deptKpiData  } from '../../components/KPI_System/mockData.js';
 import DeptTabNavigation from '../../components/KPI_System/DeptTabNavigation.vue';
 import DeptKpiCards from '../../components/KPI_System/DeptKpiCards.vue';
 import DeptCharts from '../../components/KPI_System/DeptCharts.vue';
@@ -94,6 +96,22 @@ import DeptProjectTable from '../../components/KPI_System/DeptProjectTable.vue';
 
 // Authentication Store Injection
 const authStore = useAuthStore();
+
+const kpiDashboardSummary = ref({}); // Khởi tạo object rỗng
+const isLoaded = ref(false) 
+
+onMounted(async () => {
+  try {
+    // const res = await getPersonalKpiSummary(authStore.user.userId)
+    const res = await deptKpiData
+    kpiDashboardSummary.value = res
+    console.log("kpiDashboardSummary", kpiDashboardSummary)
+
+    isLoaded.value = true 
+  } catch (error) {
+    console.error("Lỗi fetch data:", error)
+  }
+})
 
 // Tab Switcher State
 const activeTab = ref('Global');

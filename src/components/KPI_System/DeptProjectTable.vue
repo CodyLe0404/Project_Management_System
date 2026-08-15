@@ -187,6 +187,10 @@ const props = defineProps({
     type: Array,
     required: true
   },
+  kpiDashboardSummary: {
+    type: Array,
+    required: true
+  },
   activeTab: {
     type: String,
     required: true
@@ -204,15 +208,25 @@ watch(() => props.activeTab, () => {
 
 // Search Filter
 const filteredAndSearchedProjects = computed(() => {
-  const query = searchQuery.value.toLowerCase().trim();
-  if (!query) return props.filteredProjects;
-  return props.filteredProjects.filter(p => 
-    p.name.toLowerCase().includes(query) || 
-    p.status.toLowerCase().includes(query) ||
-    (p.dept && p.dept.toLowerCase().includes(query))
-  );
+  if (!props.kpiDashboardSummary) return [];
+  
+  // Ví dụ: Lọc danh sách 129 item theo activeTab
+  return props.kpiDashboardSummary.filter(project => {
+    // Viết logic lọc của bạn ở đây
+    return true; 
+  });
 });
 
+// const filteredAndSearchedProjects = computed(() => {
+//   const query = searchQuery.value.toLowerCase().trim();
+//   if (!query) return props.filteredProjects;
+//   return props.filteredProjects.filter(p => 
+//     p.name.toLowerCase().includes(query) || 
+//     p.status.toLowerCase().includes(query) ||
+//     (p.dept && p.dept.toLowerCase().includes(query))
+//   );
+// });
+console.log("filteredAndSearchedProjects:", filteredAndSearchedProjects);
 // Pagination Calculations
 const totalPages = computed(() => {
   return Math.ceil(filteredAndSearchedProjects.value.length / itemsPerPage) || 1;
@@ -231,7 +245,7 @@ const getStatusBadgeStyle = (status) => {
     case 'Ahead of schedule':
       return 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60';
     case 'On Time':
-      return 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60';
+      return 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60';
     case 'Doing':
       return 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60';
     case 'Not yet start':

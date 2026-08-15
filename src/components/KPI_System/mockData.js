@@ -8,13 +8,14 @@ import pic9 from '/src/assets/image_profile/pic9.jpg'
 import pic6 from '/src/assets/image_profile/pic6.jpg'
 import pic10 from '/src/assets/image_profile/pic10.jpg'
 import pic3 from '/src/assets/image_profile/pic3.jpg'
-import { getPersonalKpiSummary } from '../../services/projectService'
+import { getPersonalKpiSummary, getDeptKpiSummary } from '../../services/projectService'
 import { useAuthStore } from '../../stores/auth';
 
 const authStore = useAuthStore();
 
 // import pic04 from '/src/assets/image_profile/pic04.jpg'
 export const kpiDashboardSummary = getPersonalKpiSummary(authStore.user.userId)
+export const deptKpiData = getDeptKpiSummary(authStore.user.userId)
 
 export const mockMembers = [
   {

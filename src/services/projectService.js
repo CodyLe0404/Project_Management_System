@@ -152,6 +152,19 @@ export async function getPersonalKpiSummary(userId) {
   return await response.json()
 }
 
+export async function getDeptKpiSummary(userId) {
+  const response = await fetch(`${API_BASE}/kpi/dept?userId=${userId}`)
+
+  if (!response.ok) {
+    const text = await response.text()
+    throw new Error(
+      `Failed to load department KPI summary data: ${response.status} ${text}`
+    )
+  }
+
+  return await response.json()
+}
+
 export async function getDashboardSummary(userId) {
   const response = await fetch(`${API_BASE}/dashboard/summary?userId=${userId}`)
 

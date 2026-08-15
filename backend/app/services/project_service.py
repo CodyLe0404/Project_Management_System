@@ -7,6 +7,7 @@ from app.core.exceptions import ServiceError
 from app.core.middleware import log_daily
 from app.repositories.project_repository import ProjectRepository
 from app.services.personal_kpi_builder import PersonalKPIBuilder
+from app.services.dept_kpi_builder import DeptKPIBuilder
 from app.services.dashboard_builder import DashboardBuilder
 from app.utils.security import decrypt_password, encrypt_password
 
@@ -186,7 +187,7 @@ class ProjectService:
         raise ServiceError(message, status_code=400)
 
     def get_personal_kpi_data(self) -> dict[str, Any]:
-        raw_data = self.repository.get_kpi_personal_all_data()
+        raw_data = self.repository.get_kpi_all_data()
         builder = PersonalKPIBuilder()
         personal_detail, total_summary = builder.build(raw_data)
         personalKpiData = {
@@ -195,6 +196,18 @@ class ProjectService:
             'personalKpiDetail' : raw_data
         }
         return personalKpiData
+
+    def get_dept_kpi_data(self) -> dict[str, Any]:
+            raw_data = self.repository.get_kpi_all_data()
+            builder = DeptKPIBuilder()
+            result = builder.transform(raw_data)
+            # dept_detail, total_summary = builder.build(raw_data)
+            # deptKpiData = {
+            #     'totalSummary' : "total_summary",
+            #     'deptKpiSummary' : "personal_detail",
+            #     'deptKpiDetail' : result
+            # }
+            return result
     
     def get_dashboard_data(self)-> list[dict[str, Any]]:
         raw_data = self.repository.get_dashboard_summary()
