@@ -30,12 +30,12 @@
         <thead>
           <tr class="bg-slate-50 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 font-semibold text-xs border-b border-slate-200 dark:border-slate-800">
             <th class="px-6 py-4">Project Name</th>
-            <th v-if="activeTab === 'Global'" class="px-6 py-4">Department</th>
+            <!-- <th v-if="activeTab === 'Global'" class="px-6 py-4">Department</th> -->
             <th class="px-6 py-4">Progress</th>
             <th class="px-6 py-4">Main Tasks Breakdown</th>
             <th class="px-6 py-4">Sub Tasks Breakdown</th>
             <th class="px-6 py-4">Status</th>
-            <th class="px-6 py-4">Deadline</th>
+            <!-- <th class="px-6 py-4">Deadline</th> -->
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80 text-xs">
@@ -50,11 +50,11 @@
             </td>
             
             <!-- Department (Global View Only) -->
-            <td v-if="activeTab === 'Global'" class="px-6 py-4">
+            <!-- <td v-if="activeTab === 'Global'" class="px-6 py-4">
               <span class="px-2 py-1 rounded text-[10px] font-medium" :class="getDepartmentBadgeStyle(project.dept)">
                 {{ project.dept }}
               </span>
-            </td>
+            </td> -->
             
             <!-- Progress Bar -->
             <td class="px-6 py-4 min-w-[140px]">
@@ -77,14 +77,20 @@
                   {{ project.tasks.main.total }} Tasks
                 </span>
                 <div class="flex items-center gap-1 text-[9px]">
-                  <span title="Ahead of schedule" class="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded font-semibold">
-                    ▲ {{ project.tasks.main.aheadOfSchedule }}
+                  <span title="On Time" class="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded font-semibold">
+                    ▲ {{ project.tasks.main.onTime }}
                   </span>
-                  <span title="On Time" class="px-1.5 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded font-semibold">
-                    ● {{ project.tasks.main.onTime }}
+                  <span title="Doing" class="px-1.5 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded font-semibold">
+                    ● {{ project.tasks.main.doing }}
                   </span>
                   <span title="Delay" class="px-1.5 py-0.5 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded font-semibold">
                     ▼ {{ project.tasks.main.delayed }}
+                  </span>
+                  <span title="No Plan" class="px-1.5 py-0.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded font-semibold">
+                    ◩ {{ project.tasks.main.noPlan }}
+                  </span>
+                  <span title="Not Yet Start" class="px-1.5 py-0.5 bg-slate-500/10 text-slate-600 dark:text-slate-400 rounded font-semibold">
+                    ○ {{ project.tasks.main.notYetStart }}
                   </span>
                 </div>
               </div>
@@ -98,14 +104,20 @@
                   {{ project.tasks.sub.total }} Tasks
                 </span>
                 <div class="flex items-center gap-1 text-[9px]">
-                  <span title="Ahead of schedule" class="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded font-semibold">
-                    ▲ {{ project.tasks.sub.aheadOfSchedule }}
+                  <span title="On Time" class="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded font-semibold">
+                    ▲ {{ project.tasks.sub.onTime }}
                   </span>
-                  <span title="On Time" class="px-1.5 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded font-semibold">
-                    ● {{ project.tasks.sub.onTime }}
+                  <span title="Doing" class="px-1.5 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded font-semibold">
+                    ● {{ project.tasks.sub.doing }}
                   </span>
                   <span title="Delay" class="px-1.5 py-0.5 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded font-semibold">
                     ▼ {{ project.tasks.sub.delayed }}
+                  </span>
+                  <span title="No Plan" class="px-1.5 py-0.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded font-semibold">
+                    ◩ {{ project.tasks.sub.noPlan }}
+                  </span>
+                  <span title="Not Yet Start" class="px-1.5 py-0.5 bg-slate-500/10 text-slate-600 dark:text-slate-400 rounded font-semibold">
+                    ○ {{ project.tasks.sub.notYetStart }}
                   </span>
                 </div>
               </div>
@@ -127,7 +139,7 @@
             </td>
             
             <!-- Deadline -->
-            <td class="px-6 py-4 text-slate-600 dark:text-slate-400 font-medium">
+            <!-- <td class="px-6 py-4 text-slate-600 dark:text-slate-400 font-medium">
               <div class="flex items-center gap-1.5">
                 <i class="pi pi-calendar text-[10px]" :class="isOverdue(project.deadline, project.progress) ? 'text-rose-500' : 'text-slate-400'"></i>
                 <span :class="{ 'text-rose-500 font-bold': isOverdue(project.deadline, project.progress) }">
@@ -137,7 +149,7 @@
                   Overdue
                 </span>
               </div>
-            </td>
+            </td> -->
           </tr>
           <tr v-if="paginatedProjects.length === 0">
             <td :colspan="activeTab === 'Global' ? 7 : 6" class="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
@@ -210,9 +222,18 @@ watch(() => props.activeTab, () => {
 const filteredAndSearchedProjects = computed(() => {
   if (!props.kpiDashboardSummary) return [];
   
+  const query = searchQuery.value.toLowerCase().trim();
+    if (!query) return props.kpiDashboardSummary;
+    return props.kpiDashboardSummary.filter(p => 
+      p.name.toLowerCase().includes(query) || 
+      p.status.toLowerCase().includes(query) ||
+      (p.dept && p.dept.toLowerCase().includes(query))
+    );
+
   // Ví dụ: Lọc danh sách 129 item theo activeTab
   return props.kpiDashboardSummary.filter(project => {
     // Viết logic lọc của bạn ở đây
+    
     return true; 
   });
 });
@@ -226,6 +247,7 @@ const filteredAndSearchedProjects = computed(() => {
 //     (p.dept && p.dept.toLowerCase().includes(query))
 //   );
 // });
+
 console.log("filteredAndSearchedProjects:", filteredAndSearchedProjects);
 // Pagination Calculations
 const totalPages = computed(() => {
@@ -242,18 +264,16 @@ const paginatedProjects = computed(() => {
 // Styling Helpers
 const getStatusBadgeStyle = (status) => {
   switch (status) {
-    case 'Ahead of schedule':
-      return 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60';
     case 'On Time':
       return 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60';
     case 'Doing':
-      return 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60';
-    case 'Not yet start':
-      return 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700/60';
-    case 'No plan':
-      return 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60';
+      return 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60';
     case 'Delay':
       return 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60';
+    case 'No plan':
+      return 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60';
+    case 'Not yet start':
+      return 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700/60';
     default:
       return 'bg-slate-50 text-slate-700 border border-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-800';
   }
