@@ -200,14 +200,12 @@ class ProjectService:
     def get_dept_kpi_data(self) -> dict[str, Any]:
             raw_data = self.repository.get_kpi_all_data()
             builder = DeptKPIBuilder()
-            result = builder.transform(raw_data)
-            # dept_detail, total_summary = builder.build(raw_data)
-            # deptKpiData = {
-            #     'totalSummary' : "total_summary",
-            #     'deptKpiSummary' : "personal_detail",
-            #     'deptKpiDetail' : result
-            # }
-            return result
+            projects_detail, summary_project = builder.transform(raw_data)
+            deptKpiData = {
+                'deptKpiSummary' : summary_project,
+                'deptKpiDetail' : projects_detail
+            }
+            return deptKpiData
     
     def get_dashboard_data(self)-> list[dict[str, Any]]:
         raw_data = self.repository.get_dashboard_summary()

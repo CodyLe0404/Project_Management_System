@@ -89,10 +89,57 @@ class Project:
             "mainTasks": [main_task.to_dict() for main_task in self.main_tasks],
             "tasks": self.tasks,
             "dept": self.dept
-        }        
+        }  
         
+              
+@dataclass
+class SummaryProject:
+    project: int = 0
+
+    main_task: Dict[str, int] = field(default_factory=lambda: {
+        "total": 0,
+        "onTime": 0,
+        "noPlan": 0,
+        "delayed": 0,
+        "doing": 0,
+        "notYetStart": 0
+    })
+
+    sub_task: Dict[str, Dict[str, int]] = field(default_factory=lambda: {
+        "Design (E)": {
+            "total": 0,
+            "onTime": 0,
+            "noPlan": 0,
+            "delayed": 0,
+            "doing": 0,
+            "notYetStart": 0
+        },
+        "Design (M)": {
+            "total": 0,
+            "onTime": 0,
+            "noPlan": 0,
+            "delayed": 0,
+            "doing": 0,
+            "notYetStart": 0
+        }
+    })
+
+    active_user: int = 0
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "project": self.project,
+            "mainTask": self.main_task,
+            "subTask": self.sub_task,
+            "activeUser": self.active_user
+        }
+
+
 # PROJECT KPI BUILDER        
 class DeptKPIBuilder:
+    def __init__(self):
+        self.summary_data = SummaryProject()
+    
     @staticmethod
     def parse_date(value) -> Optional[datetime]:
         if value is None:
@@ -269,8 +316,8 @@ class DeptKPIBuilder:
         plan_end = self.max_date([task.plan_end for task in main_tasks])
         actual_start = self.min_date([task.actual_start for task in main_tasks])
         actual_end = self.max_date([task.actual_end for task in main_tasks])
-        status = self.get_header_status(plan_start, plan_end, actual_start, actual_end)
         progress = self.calculate_average_progress(main_tasks)
+        status = "Doing" if progress < 100 and progress > 0 else self.get_header_status(plan_start, plan_end, actual_start, actual_end)
         main_task_counts = self.calculate_task_counts(main_tasks)
         
         all_sub_tasks = []
@@ -290,11 +337,14 @@ class DeptKPIBuilder:
             dept=dept
         )
 
-    def transform(self, rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def transform(self, rows: List[Dict[str, Any]]):
         if not rows:
-            return []
+            return [], SummaryProject().to_dict()
 
-        # Group by Project
+        # BUILD SUMMARY PROJECT
+        summary_project = self.build_summary(rows)
+
+        # GROUP BY PROJECT
         grouped_projects = {}
         for row in rows:
             project_id = row.get("project_id")
@@ -302,11 +352,98 @@ class DeptKPIBuilder:
                 grouped_projects[project_id] = []
             grouped_projects[project_id].append(row)
 
-        # Build projects
-        projects = []
+        # BUILD PROJECTS
+        projects_detail = []
         for project_rows in grouped_projects.values():
             project = self.build_project(project_rows)
-            projects.append(project.to_dict())
+            projects_detail.append(project.to_dict())
 
-        return projects       
+        return projects_detail, summary_project.to_dict()
+        
+    def build_summary(self, rows: List[Dict[str, Any]]) -> SummaryProject:
+        if not rows:
+            return SummaryProject()
+
+        # 1. GROUP BY PROJECT
+        grouped_projects = {}
+        for row in rows:
+            project_id = row.get("project_id")
+            if project_id not in grouped_projects:
+                grouped_projects[project_id] = []
+            grouped_projects[project_id].append(row)
+
+        # 2. PROJECT COUNT
+        project_count = len(grouped_projects)
+
+        # 3. BUILD MAIN TASK
+        all_main_tasks = []
+        for project_rows in grouped_projects.values():
+            grouped_main_tasks = {}
+            for row in project_rows:
+                main_task_name = row.get("main_task", "")
+                if main_task_name not in grouped_main_tasks:
+                    grouped_main_tasks[main_task_name] = []
+                grouped_main_tasks[main_task_name].append(row)
+
+            # Build MainTask
+            for (main_task_name, main_task_rows) in grouped_main_tasks.items():
+                main_task = self.build_main_task(main_task_name, main_task_rows)
+                all_main_tasks.append(main_task)
+
+        # 4. MAIN TASK SUMMARY
+        main_task_counts = self.calculate_task_counts(all_main_tasks)
+
+        # 5. SUB TASK SUMMARY
+        sub_task_summary = {
+            "Design (E)": {
+                "total": 0,
+                "onTime": 0,
+                "noPlan": 0,
+                "delayed": 0,
+                "doing": 0,
+                "notYetStart": 0
+            },
+            "Design (M)": {
+                "total": 0,
+                "onTime": 0,
+                "noPlan": 0,
+                "delayed": 0,
+                "doing": 0,
+                "notYetStart": 0
+            }
+        }
+
+        # Group SubTask theo department
+        sub_tasks_by_department = {}
+        for row in rows:
+            department = row.get("department")
+            if not department:
+                continue
+            if department not in sub_tasks_by_department:
+                sub_tasks_by_department[department] = []
+            sub_task = self.build_sub_task(row)
+            sub_tasks_by_department[department].append(sub_task)
+
+        # Calculate KPI từng department
+        for department, sub_tasks in (sub_tasks_by_department.items()):
+            counts = self.calculate_task_counts(sub_tasks)
+            sub_task_summary[department] = counts
+
+        # 6. ACTIVE USER
+        active_users = set()
+        for row in rows:
+            user = row.get("assignee")
+            if user:
+                active_users.add(user.upper())
+        active_user_count = len(active_users)
+
+        # 7. CREATE SUMMARY PROJECT
+        summary = SummaryProject(
+            project=project_count,
+            main_task=main_task_counts,
+            sub_task=sub_task_summary,
+            active_user=active_user_count
+        )
+
+        return summary
     
