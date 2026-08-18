@@ -41,20 +41,13 @@
         <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80 text-xs">
           <tr 
             v-for="project in paginatedProjects" 
-            :key="project.name"
+            :key="project._uniqueId"
             class="hover:bg-slate-50/55 dark:hover:bg-slate-800/40 transition-colors duration-250"
           >
             <!-- Project Name -->
             <td class="px-6 py-4 font-semibold text-slate-900 dark:text-slate-100">
               {{ project.name }}
             </td>
-            
-            <!-- Department (Global View Only) -->
-            <!-- <td v-if="activeTab === 'Global'" class="px-6 py-4">
-              <span class="px-2 py-1 rounded text-[10px] font-medium" :class="getDepartmentBadgeStyle(project.dept)">
-                {{ project.dept }}
-              </span>
-            </td> -->
             
             <!-- Progress Bar -->
             <td class="px-6 py-4 min-w-[140px]">
@@ -137,22 +130,10 @@
                 </span>
               </div>
             </td>
-            
-            <!-- Deadline -->
-            <!-- <td class="px-6 py-4 text-slate-600 dark:text-slate-400 font-medium">
-              <div class="flex items-center gap-1.5">
-                <i class="pi pi-calendar text-[10px]" :class="isOverdue(project.deadline, project.progress) ? 'text-rose-500' : 'text-slate-400'"></i>
-                <span :class="{ 'text-rose-500 font-bold': isOverdue(project.deadline, project.progress) }">
-                  {{ formatDate(project.deadline) }}
-                </span>
-                <span v-if="isOverdue(project.deadline, project.progress)" class="ml-1 text-[9px] font-extrabold text-rose-500 uppercase tracking-wider">
-                  Overdue
-                </span>
-              </div>
-            </td> -->
           </tr>
+
           <tr v-if="paginatedProjects.length === 0">
-            <td :colspan="activeTab === 'Global' ? 7 : 6" class="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
+            <td colspan="5" class="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
               <div class="flex flex-col items-center justify-center gap-2">
                 <i class="pi pi-inbox text-3xl"></i>
                 <span>No projects matched your search criteria.</span>
@@ -195,70 +176,58 @@
 import { ref, computed, watch } from 'vue';
 
 const props = defineProps({
-  filteredProjects: {
+  deptKpiDetailData: {
     type: Array,
-    required: true
-  },
-  kpiDashboardSummary: {
-    type: Array,
-    required: true
-  },
-  activeTab: {
-    type: String,
     required: true
   }
 });
 
 const searchQuery = ref('');
+// 1. Khai báo pagination state (Đảm bảo itemsPerPage là ref nếu có thay đổi)
 const currentPage = ref(1);
-const itemsPerPage = 6;
+const itemsPerPage = ref(10); // Hoặc const itemsPerPage = 10;
 
-// Reset page upon tab toggles
-watch(() => props.activeTab, () => {
-  currentPage.value = 1;
-});
-
-// Search Filter
+// 2. Filter danh sách gốc
 const filteredAndSearchedProjects = computed(() => {
-  if (!props.kpiDashboardSummary) return [];
-  
-  const query = searchQuery.value.toLowerCase().trim();
-    if (!query) return props.kpiDashboardSummary;
-    return props.kpiDashboardSummary.filter(p => 
-      p.name.toLowerCase().includes(query) || 
-      p.status.toLowerCase().includes(query) ||
-      (p.dept && p.dept.toLowerCase().includes(query))
-    );
+  const data = props.deptKpiDetailData;
 
-  // Ví dụ: Lọc danh sách 129 item theo activeTab
-  return props.kpiDashboardSummary.filter(project => {
-    // Viết logic lọc của bạn ở đây
-    
-    return true; 
+  if (!Array.isArray(data)) return [];
+
+  const query = searchQuery.value.toLowerCase().trim();
+
+  return data.filter(project => {
+    const matchesSearch = !query || 
+      project.name?.toLowerCase().includes(query) ||
+      project.status?.toLowerCase().includes(query);
+
+    return matchesSearch;
   });
 });
 
-// const filteredAndSearchedProjects = computed(() => {
-//   const query = searchQuery.value.toLowerCase().trim();
-//   if (!query) return props.filteredProjects;
-//   return props.filteredProjects.filter(p => 
-//     p.name.toLowerCase().includes(query) || 
-//     p.status.toLowerCase().includes(query) ||
-//     (p.dept && p.dept.toLowerCase().includes(query))
-//   );
-// });
-
-console.log("filteredAndSearchedProjects:", filteredAndSearchedProjects);
-// Pagination Calculations
+// 3. Tính toán phân trang dựa trên kết quả đã Filter
 const totalPages = computed(() => {
-  return Math.ceil(filteredAndSearchedProjects.value.length / itemsPerPage) || 1;
+  const perPage = itemsPerPage.value || itemsPerPage;
+  return Math.ceil(filteredAndSearchedProjects.value.length / perPage) || 1;
 });
 
-const startIdx = computed(() => (currentPage.value - 1) * itemsPerPage);
-const endIdx = computed(() => startIdx.value + itemsPerPage);
+const startIdx = computed(() => {
+  const perPage = itemsPerPage.value || itemsPerPage;
+  return (currentPage.value - 1) * perPage;
+});
 
+const endIdx = computed(() => {
+  const perPage = itemsPerPage.value || itemsPerPage;
+  return startIdx.value + perPage;
+});
+
+// 4. Cắt dữ liệu hiển thị cho trang hiện tại
 const paginatedProjects = computed(() => {
   return filteredAndSearchedProjects.value.slice(startIdx.value, endIdx.value);
+});
+
+// 5. BẮT BUỘC: Reset về Trang 1 khi người dùng gõ tìm kiếm mới
+watch(searchQuery, () => {
+  currentPage.value = 1;
 });
 
 // Styling Helpers
@@ -298,13 +267,4 @@ const getProgressColorClass = (progress, status) => {
   return 'bg-indigo-600';
 };
 
-const formatDate = (dateStr) => {
-  const options = { year: 'numeric', month: 'short', day: 'numeric' };
-  return new Date(dateStr).toLocaleDateString('en-US', options);
-};
-
-const isOverdue = (deadlineStr, progress) => {
-  if (progress === 100) return false;
-  return new Date(deadlineStr) < new Date();
-};
 </script>
