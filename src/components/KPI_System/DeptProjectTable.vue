@@ -4,8 +4,8 @@
     <!-- Table Header & Controls -->
     <div class="p-6 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
-        <h3 class="font-bold text-lg text-slate-800 dark:text-slate-200">Project Portfolio Registry</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400">Detailed progress tracker, deadlines, and task breakdowns for the active department</p>
+        <h3 class="font-bold text-lg text-slate-800 dark:text-slate-200">Project Tracking</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Detailed project tracker, progress and task breakdowns for all the project</p>
       </div>
       
       <!-- Table Search & Filters -->

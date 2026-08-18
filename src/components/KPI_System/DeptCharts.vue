@@ -5,8 +5,8 @@
     <div class="lg:col-span-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
       <div class="flex items-center justify-between mb-4">
         <div>
-          <h3 class="font-bold text-slate-800 dark:text-slate-200">Task Status Distribution</h3>
-          <p class="text-xs text-slate-500 dark:text-slate-400">Comparing Main vs Sub task volume per status</p>
+          <h3 class="font-bold text-slate-800 dark:text-slate-200">Sub Task Status Distribution</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Comparing Electrical vs Mechanical subtask volume per status</p>
         </div>
         <span class="text-xs font-semibold text-slate-400 px-2 py-1 rounded bg-slate-50 dark:bg-slate-850 border border-slate-200/50 dark:border-slate-800">
           Stacked Bar Chart
@@ -22,7 +22,7 @@
       <div class="flex items-center justify-between mb-4">
         <div>
           <h3 class="font-bold text-slate-800 dark:text-slate-200">Project Status Allocation</h3>
-          <p class="text-xs text-slate-500 dark:text-slate-400">Overview of project pipeline health</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Overview of main task pipeline health</p>
         </div>
         <span class="text-xs font-semibold text-slate-400 px-2 py-1 rounded bg-slate-50 dark:bg-slate-850 border border-slate-200/50 dark:border-slate-800">
           Donut Chart
