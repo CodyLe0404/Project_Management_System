@@ -42,34 +42,32 @@ import { Chart, registerables } from 'chart.js';
 Chart.register(...registerables);
 
 const props = defineProps({
-  filteredTasks: {
+  deptKpiSummaryData: {
     type: Object,
-    required: true
-  },
-  filteredProjects: {
-    type: Array,
     required: true
   }
 });
 
 let taskChart = null;
 let projectChart = null;
-
 const getTaskChartData = () => {
-  const t = props.filteredTasks;
+  const design_data = props.deptKpiSummaryData;
+  const design_m = design_data.subTask["Design (M)"]
+  const design_e = design_data.subTask["Design (E)"]
+
   return {
-    labels: ['On time', 'Ahead of schedule', 'Delay'],
+    labels: ['On time', 'Delay', 'Doing', 'Not Yet Start', 'No Plan'],
     datasets: [
       {
-        label: 'Main Tasks',
-        data: [t.main.onTime, t.main.aheadOfSchedule, t.main.delayed],
+        label: 'Electrical',
+        data: [design_e.onTime, design_e.delayed, design_e.doing, design_e.notYetStart, design_e.noPlan],
         backgroundColor: '#4f46e5', // Indigo 600
         hoverBackgroundColor: '#4338ca',
         borderRadius: 6
       },
       {
-        label: 'Sub Tasks',
-        data: [t.sub.onTime, t.sub.aheadOfSchedule, t.sub.delayed],
+        label: 'Mechanical',
+        data: [design_m.onTime, design_m.delayed, design_m.doing, design_m.notYetStart, design_m.noPlan],
         backgroundColor: '#818cf8', // Indigo 400
         hoverBackgroundColor: '#6366f1',
         borderRadius: 6
@@ -79,16 +77,14 @@ const getTaskChartData = () => {
 };
 
 const getProjectChartData = () => {
-  const projects = props.filteredProjects;
-  const statuses = ["Ahead of schedule", "Not yet start", "On Time", "Doing", "No plan", "Delay"];
-  const counts = statuses.map(status => projects.filter(p => p.status === status).length);
+  const main_task = props.deptKpiSummaryData.mainTask;
+  const statuses = ["Not Yet Start", "On Time", "Doing", "No Plan", "Delay"];
   
   return {
     labels: statuses,
     datasets: [{
-      data: counts,
+      data: [main_task.notYetStart, main_task.onTime, main_task.doing, main_task.noPlan, main_task.delayed],
       backgroundColor: [
-        '#10b981', // Ahead of schedule -> Emerald 500
         '#94a3b8', // Not yet start -> Slate 400
         '#3b82f6', // On Time -> Blue 500
         '#f59e0b', // Doing -> Amber 500
@@ -188,11 +184,11 @@ const updateCharts = () => {
   }
 };
 
-watch(() => props.filteredTasks, () => {
+watch(() => props.deptKpiSummaryData, () => {
   updateCharts();
 }, { deep: true });
 
-watch(() => props.filteredProjects, () => {
+watch(() => props.deptKpiSummaryData, () => {
   updateCharts();
 }, { deep: true });
 
