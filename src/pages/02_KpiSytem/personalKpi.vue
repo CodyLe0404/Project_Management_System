@@ -88,23 +88,21 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useAuthStore } from '../../stores/auth';
 
-import { kpiDashboardSummary  } from '../../components/KPI_System/mockData.js';
+// import { kpiDashboardSummary  } from '../../components/KPI_System/mockData.js';
 import DashboardOverview from '../../components/KPI_System/DashboardOverview.vue';
 import MemberList from '../../components/KPI_System/MemberList.vue';
 import MemberDetailModal from '../../components/KPI_System/MemberDetailModal.vue';
 import { getPersonalKpiSummary } from '../../services/projectService';
 
-
 const authStore = useAuthStore();
-
 
 const dashboardSummary = ref({}); // Khởi tạo object rỗng
 const isLoaded = ref(false) 
 
 onMounted(async () => {
   try {
-    // const res = await getPersonalKpiSummary(authStore.user.userId)
-    const res = await kpiDashboardSummary
+    const res = await getPersonalKpiSummary(authStore.user.userId)
+    // const res = await kpiDashboardSummary
     dashboardSummary.value = res
     isLoaded.value = true 
   } catch (error) {

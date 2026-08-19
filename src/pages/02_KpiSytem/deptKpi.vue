@@ -72,7 +72,8 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useAuthStore } from '../../stores/auth';
 
-import { deptKpiData  } from '../../components/KPI_System/mockData.js';
+import { getDeptKpiSummary } from '../../services/projectService'
+// import { deptKpiData  } from '../../components/KPI_System/mockData.js';
 import DeptTabNavigation from '../../components/KPI_System/DeptTabNavigation.vue';
 import DeptKpiCards from '../../components/KPI_System/DeptKpiCards.vue';
 import DeptCharts from '../../components/KPI_System/DeptCharts.vue';
@@ -87,8 +88,8 @@ const isLoaded = ref(false)
 
 onMounted(async () => {
   try {
-    // const res = await getPersonalKpiSummary(authStore.user.userId)
-    const res = await deptKpiData
+    const res = await getDeptKpiSummary(authStore.user.userId);
+    // const res = await deptKpiData
     deptKpiSummaryData.value = res.deptKpiSummary
     deptKpiDetailData.value = res.deptKpiDetail
     // console.log("deptKpiSummaryData", deptKpiSummaryData)

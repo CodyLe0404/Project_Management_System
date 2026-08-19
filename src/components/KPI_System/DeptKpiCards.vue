@@ -115,30 +115,6 @@ const subTaskOnTimeElectrical = computed(() => {
   return Math.round((percent.onTime / percent.total) * 100 * 100) / 100
 })
 
-console.log(
-  "totalProject",
-  totalProject.value
-)
-
-console.log(
-  "totalMainTask",
-  totalMainTask.value
-)
-
-console.log(
-  "totalSubTask",
-  totalSubTask.value
-)
-
-console.log(
-  "subTaskOnTimeMechanical",
-  subTaskOnTimeMechanical.value
-)
-
-console.log(
-  "subTaskOnTimeElectrical",
-  subTaskOnTimeElectrical.value
-)
 const totalTasks = computed(() => props.totalMainTasks + props.totalSubTasks);
 
 // Dynamic Class Color Binding according to requirements (>90% Green, 70-90% Yellow, <70% Red)
