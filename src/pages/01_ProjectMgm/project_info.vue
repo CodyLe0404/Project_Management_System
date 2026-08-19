@@ -557,6 +557,8 @@ const loadData = async () => {
             }
 
             const payloadRow = {
+              rowType: 'detail',
+              is_header: false,
               project_id: newRow?.project_id || '',
               project_number: newRow?.project_number || '',
               project_name: newRow?.project_name || '',
@@ -577,12 +579,64 @@ const loadData = async () => {
               order_no: newRow?.order_no + 1 || null,
               remark: newRow?.remark || ''
             }
-            // console.log('Inserted Row Payload:', payloadRow)
-            // insertedRows.push(payloadRow)
+
+            if (newRow) {
+              newRow.rowType = 'detail'
+              newRow.is_header = false
+            }
+
             insertedRowsToSave.push(payloadRow)
             insertedRowMap.set(newRowIndex, payloadRow)
           }
+        },
+        
+        beforeChange(changes, source) {
+          if (!changes || source === 'loadData') return
 
+          const hasModifyPermission = authStore.user.userConfig.includes('DS_PMS_PI_M') || false
+
+          for (const [row, prop, oldValue, newValue] of changes) {
+            const rowData = this.getSourceDataAtRow(row)
+            if (!rowData) continue
+
+            // Keep the original insert flow intact: only protect persisted rows.
+            // Newly inserted rows are copied programmatically during afterCreateRow.
+            if (!rowData.id_item) {
+              continue
+            }
+
+            if (rowData.is_header) {
+              const allowedHeaderProps = ['main_task', 'budget', 'actual_cost', 'qty']
+              if (!allowedHeaderProps.includes(prop)) {
+                return false
+              }
+              continue
+            }
+
+            const protectedReadOnlyProps = new Set([
+              'project_id',
+              'project_number',
+              'project_name',
+              'task_no',
+              'main_task',
+              'qty',
+              'percent',
+              'status',
+              'plan_day',
+              'actual_day',
+              'budget_variance'
+            ])
+
+            if (protectedReadOnlyProps.has(prop)) {
+              return false
+            }
+
+            if ((prop === 'plan_start' || prop === 'plan_end') && !hasModifyPermission) {
+              if (rowData?.[`_original_${prop}`]) {
+                return false
+              }
+            }
+          }
         },
         // Ended log
         afterChange(changes, source) {    // Triggered automatically after any cell value changes in Handsontable
@@ -1228,6 +1282,7 @@ function hideRepeatedRenderer(
   cellProperties
 ) {
   const rowData = instance.getSourceDataAtRow(row)
+  const isDetailRow = rowData && !rowData.is_header && rowData.rowType !== 'project' && rowData.rowType !== 'task'
 
   // Helper: format numeric values consistently, without blocking rendering.
   const currencyFormatter = (val) => {
@@ -1243,7 +1298,7 @@ function hideRepeatedRenderer(
     }).format(num)
   }
 
-  if (rowData?.rowType === 'detail' && hideRepeatedColumns.includes(prop)) {
+  if (isDetailRow && hideRepeatedColumns.includes(prop)) {
     td.textContent = ''
     return td
   }
