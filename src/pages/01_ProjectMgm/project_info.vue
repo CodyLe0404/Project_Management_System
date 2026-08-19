@@ -765,9 +765,10 @@ function getDisplayedRows() {
 
     const mainTask = String(row.main_task || '').toLowerCase()
     const subTask = String(row.sub_task || '').toLowerCase()
+    const taskNo = String(row.task_no || '').toLowerCase()
 
     // Empty task filter -> all tasks are valid
-    const taskMatches = !taskQueryValue || mainTask.includes(taskQueryValue) || subTask.includes(taskQueryValue)
+    const taskMatches = !taskQueryValue || taskNo.includes(taskQueryValue) || mainTask.includes(taskQueryValue) || subTask.includes(taskQueryValue)
     if (taskMatches) {
       matchingTaskKeys.add(`${projectId}__${row.main_task}`)
     }
