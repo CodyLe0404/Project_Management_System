@@ -212,6 +212,11 @@ class ProjectService:
         dashboard = DashboardBuilder()
         return dashboard.create_dashboard_data(raw_data)
 
+    def get_item_missing_data(self)-> list[dict[str, Any]]:
+            raw_data = self.repository.get_item_data_missing()
+            return raw_data
+    
+    
     @staticmethod
     def _parse_datetime(value: str | None) -> datetime | None:
         if not value:

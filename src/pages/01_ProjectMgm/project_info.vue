@@ -30,7 +30,7 @@
             ref="taskInput"
             v-model="taskQuery"
             type="text"
-            placeholder="Search Main Task"
+            placeholder="Search Main Task / Task No"
             class="search-input"
           />
         </div>

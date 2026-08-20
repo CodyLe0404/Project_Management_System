@@ -82,7 +82,12 @@ def get_dept_kpi(service: ProjectService = Depends(get_project_service)) -> dict
 
 
 @router.get("/dashboard/summary")
-def get_personal_kpi(service: ProjectService = Depends(get_project_service)) -> dict:
+def get_dashboard_data(service: ProjectService = Depends(get_project_service)) -> dict:
     return service.get_dashboard_data()
+
+
+@router.get("/dashboard/itemmissing")
+def get_item_missing_assignee(service: ProjectService = Depends(get_project_service)) -> list:
+    return service.get_item_missing_data()
 
 
