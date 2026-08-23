@@ -14,7 +14,7 @@
 
         <div class="p-6 h-16 flex items-center justify-between border-b border-surface-200 dark:border-surface-700">
             <span class="text-sm font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-indigo-500">
-                QUẢN TRỊ NỘI BỘ
+                Project Management System
             </span>
             <!-- Sidebar Toggle (Inside) - Always visible when Sidebar is Open -->
             <Button icon="pi pi-bars" text rounded @click="toggleSidebar" />
