@@ -118,23 +118,69 @@ class ProjectService:
         return {"success": status.upper() == "SUCCESS", "result": status}
 
     def insert_project_row(self, items: list[dict[str, Any]], payload) -> dict[str, Any]:
-        success_count = 0
-        results_summary = []
-        for item in items:
-            status = self.repository.insert_project_row(item)
-            results_summary.append({"task_no": item.get("task_no"), "status": status})
-            user_id = item.get("user_id", "N/A")
-            task_no = item.get("task_no", "N/A")
-            order_no = item.get("order_no", "N/A")
-            log_daily(f"[{user_id}] Insert | Task No: {task_no} | Order No: {order_no} | Result: {status}")
-            if status.upper() == "SUCCESS":
-                success_count += 1
+        import json
+        if not items:
+            return {
+                "success": True,
+                "inserted_count": 0,
+                "message": "Successfully insert 0/0 rows.",
+                "details": [],
+            }
+        
+        # Sort items by order_no
+        sorted_items = sorted(items, key=lambda x: x.get("order_no") or 0)
+        
+        # Group consecutive order_no items into separate batches
+        batches: list[list[dict[str, Any]]] = []
+        current_batch: list[dict[str, Any]] = []
+        
+        for item in sorted_items:
+            if not current_batch:
+                current_batch.append(item)
+            else:
+                prev_item = current_batch[-1]
+                prev_order = prev_item.get("order_no")
+                curr_order = item.get("order_no")
                 
-        log_daily(f"[{payload[0].user_id if payload else 'unknown'}] Insert | Successfully inserted {success_count}/{len(payload)} rows.")
+                # Check if consecutive (curr_order == prev_order + 1) and belongs to the same project group
+                if (prev_order is not None and curr_order is not None and curr_order == prev_order + 1 and
+                    item.get("project_id") == prev_item.get("project_id") and
+                    item.get("task_no") == prev_item.get("task_no") and
+                    item.get("main_task") == prev_item.get("main_task")):
+                    current_batch.append(item)
+                else:
+                    batches.append(current_batch)
+                    current_batch = [item]
+        
+        if current_batch:
+            batches.append(current_batch)
+            
+        total_inserted = 0
+        all_success = True
+        
+        # Execute each batch iteratively
+        for batch in batches:
+            json_data = json.dumps(batch, default=str)
+            print(json_data)
+            try:
+                status = self.repository.insert_project_rows_batch(json_data)
+                if status.upper() == "SUCCESS":
+                    total_inserted += len(batch)
+                else:
+                    all_success = False
+            except Exception as exc:
+                log_daily(f"Insert | Batch Insert Failed: {str(exc)}")
+                all_success = False
+                
+        user_id = items[0].get("user_id", "unknown") if items else "unknown"
+        log_daily(f"[{user_id}] Insert | Multi-Batch Insert Completed. Total: {total_inserted}/{len(items)}. All Success: {all_success}")
+        
+        results_summary = [{"task_no": item.get("task_no"), "status": "SUCCESS" if all_success else "FAILED"} for item in items]
         
         return {
-            "success": success_count == len(items),
-            "message": f"Successfully insert {success_count}/{len(items)} rows.",
+            "success": all_success,
+            "inserted_count": total_inserted,
+            "message": f"Successfully insert {total_inserted}/{len(items)} rows.",
             "details": results_summary,
         }
 

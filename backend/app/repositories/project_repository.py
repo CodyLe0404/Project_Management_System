@@ -110,6 +110,19 @@ class ProjectRepository:
         finally:
             cursor.close()
 
+    def insert_project_rows_batch(self, json_data: str) -> str:
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute(
+                "EXEC [Design_System].[dbo].[USP_PM_Insert_Row_Data_Batch] ?",
+                json_data
+            )
+            row_result = cursor.fetchone()
+            self.conn.commit()
+            return str(row_result[0]) if row_result else "UNKNOWN"
+        finally:
+            cursor.close()
+
     def bulk_update_items(self, rows: list[tuple[Any, ...]]) -> None:
         cursor = self.conn.cursor()
         try:

@@ -232,7 +232,7 @@ const calculateAndSave = async () => {
     insertedRowsToSave = []
     insertedRowMap.clear()
 
-    await loadData()
+    await fetchProjectData()
   }
   catch (error) {
     console.error(error)
@@ -241,6 +241,10 @@ const calculateAndSave = async () => {
   finally {
     isSaving.value = false
   }
+}
+
+const fetchProjectData = async () => {
+  await loadData()
 }
 
 const loadData = async () => {
@@ -529,29 +533,27 @@ const loadData = async () => {
           return true
         },
         afterCreateRow(index, amount) {
-          // const insertedRows = []
+          // 1. Lấy order_no của dòng đứng ngay trước vị trí chèn
+          const prevRowData = this.getSourceDataAtRow(index - 1)
+          const baseOrderNo = prevRowData && prevRowData.order_no ? Number(prevRowData.order_no) + 1 : 1
+
           for (let i = 0; i < amount; i++) {
-            const newRowIndex = index + i
-            const previousRow = this.getSourceDataAtRow(newRowIndex - 1)
-            const newRow = this.getSourceDataAtRow(newRowIndex)
+            const currentGridIndex = index + i
+            const newRow = this.getSourceDataAtRow(currentGridIndex) || {}
 
-            if (previousRow && newRow) {
-              const columnsToCopy = [
-                'project_id',
-                'project_number',
-                'project_name',
-                'task_no',
-                'main_task',
-                'qty',
-                'budget',
-                'actual_cost',
-                'order_no'
-              ]
+            // Tự động tính toán order_no tịnh tiến liên tục: baseOrderNo, baseOrderNo + 1, ...
+            const calculatedOrderNo = baseOrderNo + i
 
-              columnsToCopy.forEach(column => {
-                if (previousRow[column] !== undefined) {
-                  this.setDataAtRowProp(newRowIndex, column, previousRow[column])
-                  newRow[column] = previousRow[column]
+            // Cập nhật hiển thị lên Bảng (Grid)
+            this.setDataAtRowProp(currentGridIndex, 'order_no', calculatedOrderNo)
+            
+            // Copy các thông tin chung từ dòng phía trước (nếu có)
+            if (prevRowData) {
+              const columnsToCopy = ['project_id', 'project_number', 'project_name', 'task_no', 'main_task']
+              columnsToCopy.forEach(col => {
+                if (prevRowData[col] !== undefined) {
+                  this.setDataAtRowProp(currentGridIndex, col, prevRowData[col])
+                  newRow[col] = prevRowData[col]
                 }
               })
             }
@@ -559,34 +561,29 @@ const loadData = async () => {
             const payloadRow = {
               rowType: 'detail',
               is_header: false,
-              project_id: newRow?.project_id || '',
-              project_number: newRow?.project_number || '',
-              project_name: newRow?.project_name || '',
-              task_no: newRow?.task_no || '',
-              main_task: newRow?.main_task || '',
-              sub_task: newRow?.sub_task || '',
-              assignee: newRow?.assignee || '',
+              project_id: newRow.project_id || '',
+              project_number: newRow.project_number || '',
+              project_name: newRow.project_name || '',
+              task_no: newRow.task_no || '',
+              main_task: newRow.main_task || '',
+              sub_task: newRow.sub_task || '',
+              assignee: newRow.assignee || '',
               percent: getRowProcess(newRow) || 0,
               status: getTaskStatus(newRow) || '',
-              qty: newRow?.qty || 0,
-              budget: newRow?.budget || 0,
-              actual_cost: newRow?.actual_cost || 0,
+              qty: newRow.qty || 0,
+              budget: newRow.budget || 0,
+              actual_cost: newRow.actual_cost || 0,
               user_id: authStore.user.userId,
-              plan_start: newRow?.plan_start || null,
-              plan_end: newRow?.plan_end || null,
-              actual_start: newRow?.actual_start || null,
-              actual_end: newRow?.actual_end || null,
-              order_no: newRow?.order_no + 1 || null,
-              remark: newRow?.remark || ''
-            }
-
-            if (newRow) {
-              newRow.rowType = 'detail'
-              newRow.is_header = false
+              plan_start: newRow.plan_start || null,
+              plan_end: newRow.plan_end || null,
+              actual_start: newRow.actual_start || null,
+              actual_end: newRow.actual_end || null,
+              order_no: calculatedOrderNo, // Gán đúng order_no đã tính
+              remark: newRow.remark || ''
             }
 
             insertedRowsToSave.push(payloadRow)
-            insertedRowMap.set(newRowIndex, payloadRow)
+            insertedRowMap.set(currentGridIndex, payloadRow)
           }
         },
         
