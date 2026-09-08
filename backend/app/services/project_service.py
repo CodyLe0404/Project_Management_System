@@ -161,7 +161,6 @@ class ProjectService:
         # Execute each batch iteratively
         for batch in batches:
             json_data = json.dumps(batch, default=str)
-            print(json_data)
             try:
                 status = self.repository.insert_project_rows_batch(json_data)
                 if status.upper() == "SUCCESS":
