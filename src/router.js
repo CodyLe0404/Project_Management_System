@@ -5,6 +5,16 @@ import { useAuthStore } from './stores/auth';
 
 const routes = setupLayouts(generatedRoutes)
 
+// Aliases and parameterized routes for Failure Cost module
+routes.push(
+    { path: '/failure-cost', redirect: '/02_Fcost/fcostDashboard' },
+    { path: '/failure-cost/dashboard', redirect: '/02_Fcost/fcostDashboard' },
+    { path: '/failure-cost/entry', redirect: '/02_Fcost/fcostEntry' },
+    { path: '/failure-cost/entry/:id', redirect: to => ({ path: '/02_Fcost/fcostEntry', query: { id: to.params.id } }) },
+    { path: '/02_Fcost/fcostEntry/:id', redirect: to => ({ path: '/02_Fcost/fcostEntry', query: { id: to.params.id } }) },
+    { path: '/failure-cost/list', redirect: '/02_Fcost/fcostList' }
+);
+
 export const router = createRouter({
     history: createWebHistory(),
     routes,
