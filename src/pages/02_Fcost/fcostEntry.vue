@@ -86,7 +86,7 @@
             <input
               v-model="form.errorDate"
               type="date"
-              class="w-full px-3 py-2 text-xs border rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all"
+              class="form-control"
               :class="hasError('errorDate') ? 'border-rose-400 ring-1 ring-rose-300' : 'border-slate-200 dark:border-slate-700'"
             />
           </div>
@@ -98,7 +98,7 @@
             </label>
             <select
               v-model="form.departmentId"
-              class="w-full px-3 py-2 text-xs border rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all"
+              class="form-control"
               :class="hasError('departmentId') ? 'border-rose-400 ring-1 ring-rose-300' : 'border-slate-200 dark:border-slate-700'"
               @change="onDepartmentChanged"
             >
@@ -114,17 +114,25 @@
             <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Project No. <span class="text-rose-500">*</span>
             </label>
-            <select
-              v-model="form.projectId"
-              class="w-full px-3 py-2 text-xs border rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all"
-              :class="hasError('projectId') ? 'border-rose-400 ring-1 ring-rose-300' : 'border-slate-200 dark:border-slate-700'"
-              @change="onProjectChanged"
+            <AutoComplete
+              v-model="selectedProject"
+              :suggestions="projectSuggestions"
+              optionLabel="projectNo"
+              placeholder="-- Search Project Number --"
+              dropdown
+              forceSelection
+              class="form-control-autocomplete"
+              :inputClass="getSelectionInputClass('projectId')"
+              @complete="searchProjects"
+              @item-select="onProjectChanged"
             >
-              <option :value="null" disabled>-- Select Project Number --</option>
-              <option v-for="prj in store.masterData.projects" :key="prj.id" :value="prj.id">
-                {{ prj.projectNo }} ({{ prj.projectName }})
-              </option>
-            </select>
+              <template #option="slotProps">
+                <div class="flex flex-col">
+                  <span class="font-semibold">{{ slotProps.option.projectNo }}</span>
+                  <span class="text-xs text-slate-500">{{ slotProps.option.projectName }}</span>
+                </div>
+              </template>
+            </AutoComplete>
           </div>
 
           <!-- Project Name (Auto Populated) -->
@@ -137,7 +145,7 @@
               type="text"
               readonly
               placeholder="Select Project No above..."
-              class="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 cursor-not-allowed font-medium"
+              class="form-control form-control-readonly"
             />
           </div>
 
@@ -146,16 +154,24 @@
             <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Person In Charge (PIC) <span class="text-rose-500">*</span>
             </label>
-            <select
-              v-model="form.picUserId"
-              class="w-full px-3 py-2 text-xs border rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all"
-              :class="hasError('picUserId') ? 'border-rose-400 ring-1 ring-rose-300' : 'border-slate-200 dark:border-slate-700'"
+            <AutoComplete
+              v-model="selectedPic"
+              :suggestions="picSuggestions"
+              optionLabel="name"
+              placeholder="-- Search PIC User --"
+              dropdown
+              forceSelection
+              class="form-control-autocomplete"
+              :inputClass="getSelectionInputClass('picUserId')"
+              @complete="searchPicUsers"
             >
-              <option :value="null" disabled>-- Select PIC User --</option>
-              <option v-for="u in store.masterData.users" :key="u.id" :value="u.id">
-                {{ u.name }} ({{ u.departmentName }})
-              </option>
-            </select>
+              <template #option="slotProps">
+                <div class="flex flex-col">
+                  <span class="font-semibold">{{ slotProps.option.name }}</span>
+                  <span class="text-xs text-slate-500">{{ slotProps.option.departmentName }}</span>
+                </div>
+              </template>
+            </AutoComplete>
           </div>
 
           <!-- Checker -->
@@ -163,16 +179,24 @@
             <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Checker <span class="text-rose-500">*</span>
             </label>
-            <select
-              v-model="form.checkerUserId"
-              class="w-full px-3 py-2 text-xs border rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all"
-              :class="hasError('checkerUserId') ? 'border-rose-400 ring-1 ring-rose-300' : 'border-slate-200 dark:border-slate-700'"
+            <AutoComplete
+              v-model="selectedChecker"
+              :suggestions="checkerSuggestions"
+              optionLabel="name"
+              placeholder="-- Search Checker User --"
+              dropdown
+              forceSelection
+              class="form-control-autocomplete"
+              :inputClass="getSelectionInputClass('checkerUserId')"
+              @complete="searchCheckerUsers"
             >
-              <option :value="null" disabled>-- Select Checker User --</option>
-              <option v-for="u in store.masterData.users" :key="u.id" :value="u.id">
-                {{ u.name }} ({{ u.departmentName }})
-              </option>
-            </select>
+              <template #option="slotProps">
+                <div class="flex flex-col">
+                  <span class="font-semibold">{{ slotProps.option.name }}</span>
+                  <span class="text-xs text-slate-500">{{ slotProps.option.departmentName }}</span>
+                </div>
+              </template>
+            </AutoComplete>
           </div>
         </div>
       </div>
@@ -404,7 +428,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { Button } from 'primevue';
+import { AutoComplete, Button } from 'primevue';
 import { useToast } from 'primevue/usetoast';
 
 import { useFailureCostStore } from '../../stores/failureCostStore.js';
@@ -440,6 +464,38 @@ const form = reactive({
 });
 
 const validationErrors = ref([]);
+const projectSuggestions = ref([]);
+const picSuggestions = ref([]);
+const checkerSuggestions = ref([]);
+
+const selectionInputBaseClass = 'form-control';
+
+const selectedProject = computed({
+  get() {
+    return store.masterData.projects.find(project => project.id === Number(form.projectId)) || null;
+  },
+  set(project) {
+    form.projectId = project?.id ?? null;
+  }
+});
+
+const selectedPic = computed({
+  get() {
+    return store.masterData.users.find(user => user.id === Number(form.picUserId)) || null;
+  },
+  set(user) {
+    form.picUserId = user?.id ?? null;
+  }
+});
+
+const selectedChecker = computed({
+  get() {
+    return store.masterData.users.find(user => user.id === Number(form.checkerUserId)) || null;
+  },
+  set(user) {
+    form.checkerUserId = user?.id ?? null;
+  }
+});
 
 // Auto-fill project name when project is selected
 const selectedProjectName = computed(() => {
@@ -468,6 +524,37 @@ function onDepartmentChanged() {
 
 function onProjectChanged() {
   // Project name automatically computed
+}
+
+function searchProjects(event) {
+  const query = (event.query || '').trim().toLowerCase();
+  projectSuggestions.value = store.masterData.projects.filter(project => {
+    return !query
+      || String(project.projectNo || '').toLowerCase().includes(query)
+      || String(project.projectName || '').toLowerCase().includes(query);
+  });
+}
+
+function searchUsers(event, suggestions) {
+  const query = (event.query || '').trim().toLowerCase();
+  suggestions.value = store.masterData.users.filter(user => {
+    return !query
+      || String(user.name || '').toLowerCase().includes(query)
+      || String(user.departmentName || '').toLowerCase().includes(query);
+  });
+}
+
+function searchPicUsers(event) {
+  searchUsers(event, picSuggestions);
+}
+
+function searchCheckerUsers(event) {
+  searchUsers(event, checkerSuggestions);
+}
+
+function getSelectionInputClass(field) {
+  const errorClass = hasError(field) ? 'border-rose-400 ring-1 ring-rose-300' : 'border-slate-200 dark:border-slate-700';
+  return `${selectionInputBaseClass} ${errorClass}`;
 }
 
 function hasError(field) {
@@ -591,6 +678,86 @@ function handleCancel() {
 </script>
 
 <style scoped>
+.form-control {
+  width: 100%;
+  height: 34px;
+  padding: 8px 12px;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 12px;
+  background-color: rgb(248 250 252);
+  color: rgb(15 23 42);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  outline: none;
+  transition: all 150ms ease;
+}
+
+.form-control:focus {
+  border-color: rgb(99 102 241);
+  box-shadow: 0 0 0 2px rgb(99 102 241 / 0.2);
+}
+
+.form-control-readonly {
+  background-color: rgb(241 245 249);
+  color: rgb(71 85 105);
+  cursor: not-allowed;
+}
+
+.form-control-autocomplete {
+  display: flex;
+  width: 100%;
+  height: 34px;
+}
+
+:deep(.form-control-autocomplete .p-autocomplete-input) {
+  min-width: 0;
+  height: 34px;
+  padding: 8px 12px;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 12px 0 0 12px;
+  background-color: rgb(248 250 252);
+  color: rgb(15 23 42);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  outline: none;
+  transition: all 150ms ease;
+}
+
+:deep(.form-control-autocomplete .p-autocomplete-input:focus) {
+  border-color: rgb(99 102 241);
+  box-shadow: 0 0 0 2px rgb(99 102 241 / 0.2);
+}
+
+:deep(.form-control-autocomplete .p-autocomplete-dropdown) {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-width: 1px;
+  border-style: solid;
+  border-left-width: 0;
+  border-radius: 0 12px 12px 0;
+  background-color: rgb(248 250 252);
+  color: rgb(71 85 105);
+}
+
+.dark .form-control,
+.dark :deep(.form-control-autocomplete .p-autocomplete-input),
+.dark :deep(.form-control-autocomplete .p-autocomplete-dropdown) {
+  background-color: rgb(30 41 59);
+  color: rgb(248 250 252);
+}
+
+.dark .form-control-readonly {
+  background-color: rgb(30 41 59 / 0.6);
+  color: rgb(203 213 225);
+}
+
 h1 {
   font-size: 1.875rem !important;
   line-height: 2.25rem !important;

@@ -6,8 +6,8 @@
 export const mockDepartments = [
   { id: 1, name: 'Electrical' },
   { id: 2, name: 'Mechanical' },
-  { id: 3, name: 'Design' },
-  { id: 4, name: 'Engineering' }
+  // { id: 3, name: 'Design' },
+  // { id: 4, name: 'Engineering' }
 ];
 
 export const mockErrorCatalogsByDept = {
