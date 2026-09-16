@@ -2,26 +2,40 @@
  * Mock Data for Failure Cost / Design Error Tracker Module
  * Ready for future backend replacement (FastAPI + SQL Server)
  */
+import { getCommonDataFcost } from '../services/fcostService.js';
+import { useAuthStore } from '../stores/auth';
 
-export const mockDepartments = [
-  { id: 1, name: 'Electrical' },
-  { id: 2, name: 'Mechanical' },
-  // { id: 3, name: 'Design' },
-  // { id: 4, name: 'Engineering' }
-];
+const authStore = useAuthStore();
+
+// export const mockDepartments = [
+//   { id: 1, name: 'Electrical' },
+//   { id: 2, name: 'Mechanical' },
+//   // { id: 3, name: 'Design' },
+//   // { id: 4, name: 'Engineering' }
+// ];
+
+export const mockDepartments = await getCommonDataFcost({ userId: authStore.user.userId, condition: 'All_Departments' });
+
 
 export const mockErrorCatalogsByDept = {
   1: [ // Electrical
-    { id: 101, name: 'Circuit / Terminal' },
-    { id: 102, name: 'Equipment' },
-    { id: 103, name: 'Instrument' },
-    { id: 104, name: 'Arrangement / Layout' }
+    { id: 101, name: 'CIR-01: Mạch điều khiển & Terminal (Sai đấu nối, logic, sơ đồ chân)' },
+    { id: 102, name: 'EQP-02: Thiết bị chính (MCCB, MCB, MC)' },
+    { id: 103, name: 'INST-03: Đo lường & Bảo vệ (Lỗi CT, PT, Relay, Meter, VD)' },
+    { id: 104, name: 'ARR-04: Bố trí mặt cánh & Layout (Arrangement - Cấn đụng, sai tọa độ)' },
+    { id: 105, name: 'RAW-05: Vật tư phụ (Sai tiết diện cáp, cốt, nhãn)' },
+    { id: 106, name: 'LV-06: Mạch động lực hạ thế (Nhầm lẫn mạch động lực)' },
+    { id: 107, name: 'ASSY-07: Bản vẽ lắp ráp & BOM (Trễ BOM, sai chỉ dẫn)' }
+    
   ],
   2: [ // Mechanical
-    { id: 201, name: 'Busbar' },
-    { id: 202, name: 'Frame' },
-    { id: 203, name: 'Door' },
-    { id: 204, name: 'Support / Assembly' }
+    { id: 201, name: 'BUS-01: Thiết kế Busbar (Sai kích thước đột lỗ, chấn uốn, khoảng cách)' },
+    { id: 202, name: 'FRM-02: Khung & Vỏ tủ (Frame/Base/Top/Side - Sai kết cấu, kích thước)' },
+    { id: 203, name: 'DOOR-03: Mặt cánh tủ (Door - Cấn đụng, khoét lỗ sai vị trí)' },
+    { id: 204, name: 'SUP-04: Gá đỡ & Lắp ráp (Support/Assembly - Thiếu gá đỡ, sai vị trí)' },
+    { id: 205, name: 'MAT-05: Vật tư cơ khí (Nhầm vật liệu, vd: Polycarbonate vs Thép)' },
+    { id: 206, name: 'DIM-06: Xung đột không gian (Collision - Cấn đụng thiết bị, không gian hẹp)' },
+    { id: 207, name: 'BOM-07: Trễ BOM / Sai số lượng (Lỗi nội bộ quy trình)' }
   ],
   3: [ // Design
     { id: 301, name: 'Spec Misunderstanding' },
@@ -39,12 +53,14 @@ export const mockErrorCatalogsByDept = {
 
 export const mockAllErrorCatalogs = Object.values(mockErrorCatalogsByDept).flat();
 
-export const mock4MAnalysisList = [
-  { id: 1, name: 'Man' },
-  { id: 2, name: 'Machine' },
-  { id: 3, name: 'Material' },
-  { id: 4, name: 'Method' }
-];
+// export const mock4MAnalysisList = [
+//   { id: 1, name: 'Man (Con người - Sai sót cá nhân, copy-paste thiếu rà soát)' },
+//   { id: 2, name: 'Machine (Công cụ - Lỗi do phần mềm 2D, CREO, hệ thống AI)' },
+//   { id: 3, name: 'Material (Vật tư - Sai spec từ khách hàng/vendor)' },
+//   { id: 4, name: 'Method (Quy trình - Thiếu cross-check, lỗi checklist FTR)' }
+// ];
+
+export const mock4MAnalysisList = await getCommonDataFcost({ userId: authStore.user.userId, condition: '4M' });
 
 export const mockStatuses = [
   { id: 1, name: 'Open', color: 'warn' },
@@ -52,33 +68,37 @@ export const mockStatuses = [
   { id: 3, name: 'Closed', color: 'success' }
 ];
 
-export const mockProjects = [
-  { id: 1, projectNo: 'PRJ-2026-001', projectName: 'Main Control Panel 110kV' },
-  { id: 2, projectNo: 'PRJ-2026-002', projectName: 'Substation Automation System' },
-  { id: 3, projectNo: 'PRJ-2026-003', projectName: 'LV Switchgear Distribution' },
-  { id: 4, projectNo: 'PRJ-2026-004', projectName: 'Generator Protection Panel' },
-  { id: 5, projectNo: 'PRJ-2026-005', projectName: 'Solar Farm Inverter Station' },
-  { id: 6, projectNo: 'PRJ-2026-006', projectName: 'Battery Energy Storage Panel' },
-  { id: 7, projectNo: 'PRJ-2026-007', projectName: 'Medium Voltage VFD Enclosure' },
-  { id: 8, projectNo: 'PRJ-2026-008', projectName: 'Auxiliary Power Cabinet' },
-  { id: 9, projectNo: 'PRJ-2026-009', projectName: 'PLC & SCADA Marshalling Rack' },
-  { id: 10, projectNo: 'PRJ-2026-010', projectName: 'Motor Control Center 400V' },
-  { id: 11, projectNo: 'PRJ-2026-011', projectName: 'GIS Interface Cabinet' },
-  { id: 12, projectNo: 'PRJ-2026-012', projectName: 'Emergency Power Transfer Unit' }
-];
+// export const mockProjects = [
+//   { id: 1, projectNo: 'PRJ-2026-001', projectName: 'Main Control Panel 110kV' },
+//   { id: 2, projectNo: 'PRJ-2026-002', projectName: 'Substation Automation System' },
+//   { id: 3, projectNo: 'PRJ-2026-003', projectName: 'LV Switchgear Distribution' },
+//   { id: 4, projectNo: 'PRJ-2026-004', projectName: 'Generator Protection Panel' },
+//   { id: 5, projectNo: 'PRJ-2026-005', projectName: 'Solar Farm Inverter Station' },
+//   { id: 6, projectNo: 'PRJ-2026-006', projectName: 'Battery Energy Storage Panel' },
+//   { id: 7, projectNo: 'PRJ-2026-007', projectName: 'Medium Voltage VFD Enclosure' },
+//   { id: 8, projectNo: 'PRJ-2026-008', projectName: 'Auxiliary Power Cabinet' },
+//   { id: 9, projectNo: 'PRJ-2026-009', projectName: 'PLC & SCADA Marshalling Rack' },
+//   { id: 10, projectNo: 'PRJ-2026-010', projectName: 'Motor Control Center 400V' },
+//   { id: 11, projectNo: 'PRJ-2026-011', projectName: 'GIS Interface Cabinet' },
+//   { id: 12, projectNo: 'PRJ-2026-012', projectName: 'Emergency Power Transfer Unit' }
+// ];
 
-export const mockUsers = [
-  { id: 1, name: 'Alex Nguyen', departmentId: 1, departmentName: 'Electrical' },
-  { id: 2, name: 'Sarah Chen', departmentId: 3, departmentName: 'Design' },
-  { id: 3, name: 'Marcus Brodie', departmentId: 4, departmentName: 'Engineering' },
-  { id: 4, name: 'Elena Rostova', departmentId: 2, departmentName: 'Mechanical' },
-  { id: 5, name: 'David Kim', departmentId: 4, departmentName: 'Engineering' },
-  { id: 6, name: 'Tran Van Nam', departmentId: 1, departmentName: 'Electrical' },
-  { id: 7, name: 'Nguyen Thi Hoa', departmentId: 2, departmentName: 'Mechanical' },
-  { id: 8, name: 'Le Hoang Long', departmentId: 3, departmentName: 'Design' },
-  { id: 9, name: 'Pham Duc Minh', departmentId: 4, departmentName: 'Engineering' },
-  { id: 10, name: 'Vu Thao Vy', departmentId: 1, departmentName: 'Electrical' }
-];
+export const mockProjects = await getCommonDataFcost({ userId: authStore.user.userId, condition: 'All_Projects' });
+
+// export const mockUsers = [
+//   { id: 1, name: 'Alex Nguyen', departmentId: 1, departmentName: 'Electrical' },
+//   { id: 2, name: 'Sarah Chen', departmentId: 3, departmentName: 'Design' },
+//   { id: 3, name: 'Marcus Brodie', departmentId: 4, departmentName: 'Engineering' },
+//   { id: 4, name: 'Elena Rostova', departmentId: 2, departmentName: 'Mechanical' },
+//   { id: 5, name: 'David Kim', departmentId: 4, departmentName: 'Engineering' },
+//   { id: 6, name: 'Tran Van Nam', departmentId: 1, departmentName: 'Electrical' },
+//   { id: 7, name: 'Nguyen Thi Hoa', departmentId: 2, departmentName: 'Mechanical' },
+//   { id: 8, name: 'Le Hoang Long', departmentId: 3, departmentName: 'Design' },
+//   { id: 9, name: 'Pham Duc Minh', departmentId: 4, departmentName: 'Engineering' },
+//   { id: 10, name: 'Vu Thao Vy', departmentId: 1, departmentName: 'Electrical' }
+// ];
+
+export const mockUsers = await getCommonDataFcost({ userId: authStore.user.userId, condition: 'All_Users' });
 
 export const initialFailureCostRecords = [
   {

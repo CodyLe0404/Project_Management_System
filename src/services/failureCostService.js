@@ -199,7 +199,7 @@ export async function createFailureCost(payload) {
   const pic = mockUsers.find(u => u.id === Number(payload.picUserId));
   const checker = mockUsers.find(u => u.id === Number(payload.checkerUserId));
   const catalog = mockAllErrorCatalogs.find(c => c.id === Number(payload.errorCatalogId));
-  const m4 = mock4MAnalysisList.find(m => m.id === Number(payload.analysis4MId));
+  const m4 = mock4MAnalysisList.find(m => m.analysis4MId === Number(payload.analysis4MId));
   const status = mockStatuses.find(s => s.id === Number(payload.statusId));
 
   const nowIso = new Date().toISOString();
@@ -256,7 +256,7 @@ export async function updateFailureCost(id, payload) {
   const pic = mockUsers.find(u => u.id === Number(payload.picUserId));
   const checker = mockUsers.find(u => u.id === Number(payload.checkerUserId));
   const catalog = mockAllErrorCatalogs.find(c => c.id === Number(payload.errorCatalogId));
-  const m4 = mock4MAnalysisList.find(m => m.id === Number(payload.analysis4MId));
+  const m4 = mock4MAnalysisList.find(m => m.analysis4MId === Number(payload.analysis4MId));
   const status = mockStatuses.find(s => s.id === Number(payload.statusId));
 
   const updatedRecord = {

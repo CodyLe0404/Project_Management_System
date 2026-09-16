@@ -144,34 +144,51 @@
               :value="selectedProjectName"
               type="text"
               readonly
-              placeholder="Select Project No above..."
+              placeholder="Select Project No."
               class="form-control form-control-readonly"
             />
           </div>
 
-          <!-- PIC -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Person In Charge (PIC) <span class="text-rose-500">*</span>
-            </label>
-            <AutoComplete
-              v-model="selectedPic"
-              :suggestions="picSuggestions"
-              optionLabel="name"
-              placeholder="-- Search PIC User --"
-              dropdown
-              forceSelection
-              class="form-control-autocomplete"
-              :inputClass="getSelectionInputClass('picUserId')"
-              @complete="searchPicUsers"
-            >
-              <template #option="slotProps">
-                <div class="flex flex-col">
-                  <span class="font-semibold">{{ slotProps.option.name }}</span>
-                  <span class="text-xs text-slate-500">{{ slotProps.option.departmentName }}</span>
-                </div>
-              </template>
-            </AutoComplete>
+          <!-- PIC Section -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Bên trái: PIC ID -->
+            <div>
+              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Person In Charge (PIC) ID <span class="text-rose-500">*</span>
+              </label>
+              <AutoComplete
+                v-model="selectedPic"
+                :suggestions="picSuggestions"
+                optionLabel="name"
+                placeholder="-- Search PIC ID --"
+                dropdown
+                forceSelection
+                class="form-control-autocomplete w-full"
+                :inputClass="getSelectionInputClass('picUserId')"
+                @complete="searchPicUsers"
+              >
+                <template #option="slotProps">
+                  <div class="flex flex-col">
+                    <span class="font-semibold">{{ slotProps.option.name }}</span>
+                    <span class="text-xs text-slate-500">{{ slotProps.option.fullname }}</span>
+                  </div>
+                </template>
+              </AutoComplete>
+            </div>
+
+            <!-- Bên phải: PIC Name -->
+            <div>
+              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                PIC Name <span class="text-slate-400 text-[10px]">(Auto-filled from PIC ID)></span>
+              </label>
+              <input
+                :value="selectedPicFullname"
+                type="text"
+                readonly
+                placeholder="Select PIC ID"
+                class="form-control form-control-readonly"
+              />
+            </div>
           </div>
 
           <!-- Checker -->
@@ -436,6 +453,7 @@ import { useFailureCostStore } from '../../stores/failureCostStore.js';
 const route = useRoute();
 const router = useRouter();
 const store = useFailureCostStore();
+console.log("Store:", store)
 const toast = useToast();
 
 const recordId = computed(() => {
@@ -504,6 +522,12 @@ const selectedProjectName = computed(() => {
   return prj ? prj.projectName : '';
 });
 
+const selectedPicFullname = computed(() => {
+  if (!form.picUserId) return '';
+  const user = store.masterData.users.find(u => u.id === Number(form.picUserId));
+  return user ? user.fullname : '';
+});
+
 // Cascading catalogs for selected department
 const availableCatalogs = computed(() => {
   if (form.departmentId && store.masterData?.errorCatalogsByDept?.[form.departmentId]) {
@@ -540,7 +564,7 @@ function searchUsers(event, suggestions) {
   suggestions.value = store.masterData.users.filter(user => {
     return !query
       || String(user.name || '').toLowerCase().includes(query)
-      || String(user.departmentName || '').toLowerCase().includes(query);
+      || String(user.fullname || '').toLowerCase().includes(query);
   });
 }
 
