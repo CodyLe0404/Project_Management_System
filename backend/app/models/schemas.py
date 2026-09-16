@@ -83,3 +83,10 @@ class BaseResponse(BaseModel):
     success: bool
     message: str
     data: Any | None = None
+
+
+class FailureCostResponse(BaseModel):
+    userId: str
+    condition: str
+
+

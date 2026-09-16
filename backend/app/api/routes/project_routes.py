@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.api.dependencies import get_project_service
 from app.core.exceptions import ServiceError
-from app.models.schemas import ChangePasswordRequest, DeleteRowRequest, InsertRowRequest, LoginRequest, ProjectItemUpdate, ProjectPayload
+from app.models.schemas import ChangePasswordRequest, DeleteRowRequest, InsertRowRequest, LoginRequest, ProjectItemUpdate, ProjectPayload, FailureCostResponse
 from app.services.project_service import ProjectService
 
 router = APIRouter()
@@ -90,4 +90,8 @@ def get_dashboard_data(service: ProjectService = Depends(get_project_service)) -
 def get_item_missing_assignee(service: ProjectService = Depends(get_project_service)) -> list:
     return service.get_item_missing_data()
 
+
+@router.post("/fcost/commondata")
+def get_common_data(payload: FailureCostResponse, service: ProjectService = Depends(get_project_service)) -> list:
+    return service.get_common_data_fcost(payload)
 

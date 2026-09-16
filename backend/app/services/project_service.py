@@ -261,6 +261,9 @@ class ProjectService:
             raw_data = self.repository.get_item_data_missing()
             return raw_data
     
+    def get_common_data_fcost(self, payload: dict) -> list[dict[str, Any]]:
+            raw_data = self.repository.get_fcost_common_data(payload.condition)
+            return raw_data
     
     @staticmethod
     def _parse_datetime(value: str | None) -> datetime | None:

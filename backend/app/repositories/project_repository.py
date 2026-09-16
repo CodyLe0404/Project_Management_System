@@ -200,5 +200,14 @@ class ProjectRepository:
                 return [dict(zip(columns, row)) for row in cursor.fetchall()]
             finally:
                 cursor.close()
+                
+    def get_fcost_common_data(self, condition: str) -> list[dict[str, Any]]:
+            cursor = self.conn.cursor()
+            try:
+                cursor.execute("EXEC [Design_System].[dbo].[USP_PM_FC_Get_Common_Data] ?", condition)
+                columns = [col[0] for col in cursor.description]
+                return [dict(zip(columns, row)) for row in cursor.fetchall()]
+            finally:
+                cursor.close()
 
     
