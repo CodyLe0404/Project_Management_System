@@ -17,39 +17,41 @@ const authStore = useAuthStore();
 export const mockDepartments = await getCommonDataFcost({ userId: authStore.user.userId, condition: 'All_Departments' });
 
 
-export const mockErrorCatalogsByDept = {
-  1: [ // Electrical
-    { id: 101, name: 'CIR-01: Mạch điều khiển & Terminal (Sai đấu nối, logic, sơ đồ chân)' },
-    { id: 102, name: 'EQP-02: Thiết bị chính (MCCB, MCB, MC)' },
-    { id: 103, name: 'INST-03: Đo lường & Bảo vệ (Lỗi CT, PT, Relay, Meter, VD)' },
-    { id: 104, name: 'ARR-04: Bố trí mặt cánh & Layout (Arrangement - Cấn đụng, sai tọa độ)' },
-    { id: 105, name: 'RAW-05: Vật tư phụ (Sai tiết diện cáp, cốt, nhãn)' },
-    { id: 106, name: 'LV-06: Mạch động lực hạ thế (Nhầm lẫn mạch động lực)' },
-    { id: 107, name: 'ASSY-07: Bản vẽ lắp ráp & BOM (Trễ BOM, sai chỉ dẫn)' }
+// export const mockErrorCatalogsByDept = {
+//   1: [ // Electrical
+//     { id: 101, name: 'CIR-01: Mạch điều khiển & Terminal (Sai đấu nối, logic, sơ đồ chân)' },
+//     { id: 102, name: 'EQP-02: Thiết bị chính (MCCB, MCB, MC)' },
+//     { id: 103, name: 'INST-03: Đo lường & Bảo vệ (Lỗi CT, PT, Relay, Meter, VD)' },
+//     { id: 104, name: 'ARR-04: Bố trí mặt cánh & Layout (Arrangement - Cấn đụng, sai tọa độ)' },
+//     { id: 105, name: 'RAW-05: Vật tư phụ (Sai tiết diện cáp, cốt, nhãn)' },
+//     { id: 106, name: 'LV-06: Mạch động lực hạ thế (Nhầm lẫn mạch động lực)' },
+//     { id: 107, name: 'ASSY-07: Bản vẽ lắp ráp & BOM (Trễ BOM, sai chỉ dẫn)' }
     
-  ],
-  2: [ // Mechanical
-    { id: 201, name: 'BUS-01: Thiết kế Busbar (Sai kích thước đột lỗ, chấn uốn, khoảng cách)' },
-    { id: 202, name: 'FRM-02: Khung & Vỏ tủ (Frame/Base/Top/Side - Sai kết cấu, kích thước)' },
-    { id: 203, name: 'DOOR-03: Mặt cánh tủ (Door - Cấn đụng, khoét lỗ sai vị trí)' },
-    { id: 204, name: 'SUP-04: Gá đỡ & Lắp ráp (Support/Assembly - Thiếu gá đỡ, sai vị trí)' },
-    { id: 205, name: 'MAT-05: Vật tư cơ khí (Nhầm vật liệu, vd: Polycarbonate vs Thép)' },
-    { id: 206, name: 'DIM-06: Xung đột không gian (Collision - Cấn đụng thiết bị, không gian hẹp)' },
-    { id: 207, name: 'BOM-07: Trễ BOM / Sai số lượng (Lỗi nội bộ quy trình)' }
-  ],
-  3: [ // Design
-    { id: 301, name: 'Spec Misunderstanding' },
-    { id: 302, name: 'Dimension Mismatch' },
-    { id: 303, name: 'Drawing Inconsistency' },
-    { id: 304, name: 'BOM Error' }
-  ],
-  4: [ // Engineering
-    { id: 401, name: 'Calculation Error' },
-    { id: 402, name: 'Standard Non-compliance' },
-    { id: 403, name: 'Component Selection' },
-    { id: 404, name: 'Software / Logic Bug' }
-  ]
-};
+//   ],
+//   2: [ // Mechanical
+//     { id: 201, name: 'BUS-01: Thiết kế Busbar (Sai kích thước đột lỗ, chấn uốn, khoảng cách)' },
+//     { id: 202, name: 'FRM-02: Khung & Vỏ tủ (Frame/Base/Top/Side - Sai kết cấu, kích thước)' },
+//     { id: 203, name: 'DOOR-03: Mặt cánh tủ (Door - Cấn đụng, khoét lỗ sai vị trí)' },
+//     { id: 204, name: 'SUP-04: Gá đỡ & Lắp ráp (Support/Assembly - Thiếu gá đỡ, sai vị trí)' },
+//     { id: 205, name: 'MAT-05: Vật tư cơ khí (Nhầm vật liệu, vd: Polycarbonate vs Thép)' },
+//     { id: 206, name: 'DIM-06: Xung đột không gian (Collision - Cấn đụng thiết bị, không gian hẹp)' },
+//     { id: 207, name: 'BOM-07: Trễ BOM / Sai số lượng (Lỗi nội bộ quy trình)' }
+//   ],
+//   3: [ // Design
+//     { id: 301, name: 'Spec Misunderstanding' },
+//     { id: 302, name: 'Dimension Mismatch' },
+//     { id: 303, name: 'Drawing Inconsistency' },
+//     { id: 304, name: 'BOM Error' }
+//   ],
+//   4: [ // Engineering
+//     { id: 401, name: 'Calculation Error' },
+//     { id: 402, name: 'Standard Non-compliance' },
+//     { id: 403, name: 'Component Selection' },
+//     { id: 404, name: 'Software / Logic Bug' }
+//   ]
+// };
+
+export const mockErrorCatalogsByDept = await getCommonDataFcost({ userId: authStore.user.userId, condition: 'Error_Catalog' });
 
 export const mockAllErrorCatalogs = Object.values(mockErrorCatalogsByDept).flat();
 

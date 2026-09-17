@@ -103,8 +103,8 @@
               @change="onDepartmentChanged"
             >
               <option :value="null" disabled>-- Select Department --</option>
-              <option v-for="dept in store.masterData.departments" :key="dept.id" :value="dept.id">
-                {{ dept.name }}
+              <option v-for="dept in store.masterData.departments" :key="dept.departmentId" :value="dept.departmentId">
+                {{ dept.departmentName }}
               </option>
             </select>
           </div>
@@ -196,24 +196,13 @@
             <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Checker <span class="text-rose-500">*</span>
             </label>
-            <AutoComplete
+            <input
+              type="text"
               v-model="selectedChecker"
-              :suggestions="checkerSuggestions"
-              optionLabel="name"
-              placeholder="-- Search Checker User --"
-              dropdown
-              forceSelection
-              class="form-control-autocomplete"
-              :inputClass="getSelectionInputClass('checkerUserId')"
-              @complete="searchCheckerUsers"
-            >
-              <template #option="slotProps">
-                <div class="flex flex-col">
-                  <span class="font-semibold">{{ slotProps.option.name }}</span>
-                  <span class="text-xs text-slate-500">{{ slotProps.option.departmentName }}</span>
-                </div>
-              </template>
-            </AutoComplete>
+              placeholder="Enter Checker Name..."
+              class="w-full form-control-autocomplete"
+              :class="getSelectionInputClass('checkerUserId')"
+            />
           </div>
         </div>
       </div>
@@ -250,8 +239,8 @@
               <option :value="null" disabled>
                 {{ form.departmentId ? '-- Select Error Catalog --' : '-- Choose Department First --' }}
               </option>
-              <option v-for="cat in availableCatalogs" :key="cat.id" :value="cat.id">
-                {{ cat.name }}
+              <option v-for="cat in availableCatalogs" :key="cat.errorCatalogId" :value="cat.errorCatalogId">
+                {{ cat.errorName }}
               </option>
             </select>
           </div>
@@ -530,10 +519,14 @@ const selectedPicFullname = computed(() => {
 
 // Cascading catalogs for selected department
 const availableCatalogs = computed(() => {
-  if (form.departmentId && store.masterData?.errorCatalogsByDept?.[form.departmentId]) {
-    return store.masterData.errorCatalogsByDept[form.departmentId];
+  if (!form.departmentId || !Array.isArray(store.masterData?.errorCatalogsByDept)) {
+    return store.masterData?.allErrorCatalogs || [];
   }
-  return store.masterData?.allErrorCatalogs || [];
+  // Lọc ra các catalog thuộc departmentId đang chọn (ép về Number để so sánh an toàn)
+  const filtered = store.masterData.errorCatalogsByDept.filter(
+    cat => Number(cat.departmentId) === Number(form.departmentId)
+  );
+  return filtered.length > 0 ? filtered : [];
 });
 
 function onDepartmentChanged() {
