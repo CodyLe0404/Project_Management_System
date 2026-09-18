@@ -198,10 +198,10 @@
             </label>
             <input
               type="text"
-              v-model="selectedChecker"
-              placeholder="Enter Checker Name..."
+              v-model="form.checkerName"
+              placeholder="Nhập tên Checker..."
               class="w-full form-control-autocomplete"
-              :class="getSelectionInputClass('checkerUserId')"
+              :class="getSelectionInputClass('checkerName')"
             />
           </div>
         </div>
@@ -325,7 +325,7 @@
               :class="hasError('analysis4MId') ? 'border-rose-400 ring-1 ring-rose-300' : 'border-slate-200 dark:border-slate-700'"
             >
               <option :value="null" disabled>-- Select 4M Classification --</option>
-              <option v-for="m in store.masterData.analysis4MList" :key="m.id" :value="m.id">
+              <option v-for="m in store.masterData.analysis4MList" :key="m.analysis4MId" :value="m.analysis4MId">
                 {{ m.name }}
               </option>
             </select>
@@ -436,13 +436,18 @@ import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { AutoComplete, Button } from 'primevue';
 import { useToast } from 'primevue/usetoast';
-
+import { useAuthStore } from '../../stores/auth';
 import { useFailureCostStore } from '../../stores/failureCostStore.js';
+import {
+  createFailureCostList
+} from '../../services/fcostService.js';
+
+const authStore = useAuthStore();
 
 const route = useRoute();
 const router = useRouter();
 const store = useFailureCostStore();
-console.log("Store:", store)
+console.log("Store:", store);
 const toast = useToast();
 
 const recordId = computed(() => {
@@ -457,7 +462,7 @@ const form = reactive({
   departmentId: null,
   projectId: null,
   picUserId: null,
-  checkerUserId: null,
+  checkerName: '', 
   errorCatalogId: null,
   defectDescription: '',
   quantity: 1,
@@ -467,13 +472,14 @@ const form = reactive({
   correction: '',
   prevention: '',
   statusId: 1, // Default 'Open'
-  remark: ''
+  remark: '',
+  createdBy: Number(authStore.user.employeeId) || 1, 
+  userId: authStore.user.userId,
 });
 
 const validationErrors = ref([]);
 const projectSuggestions = ref([]);
 const picSuggestions = ref([]);
-const checkerSuggestions = ref([]);
 
 const selectionInputBaseClass = 'form-control';
 
@@ -495,15 +501,6 @@ const selectedPic = computed({
   }
 });
 
-const selectedChecker = computed({
-  get() {
-    return store.masterData.users.find(user => user.id === Number(form.checkerUserId)) || null;
-  },
-  set(user) {
-    form.checkerUserId = user?.id ?? null;
-  }
-});
-
 // Auto-fill project name when project is selected
 const selectedProjectName = computed(() => {
   if (!form.projectId) return '';
@@ -522,7 +519,6 @@ const availableCatalogs = computed(() => {
   if (!form.departmentId || !Array.isArray(store.masterData?.errorCatalogsByDept)) {
     return store.masterData?.allErrorCatalogs || [];
   }
-  // Lọc ra các catalog thuộc departmentId đang chọn (ép về Number để so sánh an toàn)
   const filtered = store.masterData.errorCatalogsByDept.filter(
     cat => Number(cat.departmentId) === Number(form.departmentId)
   );
@@ -530,7 +526,6 @@ const availableCatalogs = computed(() => {
 });
 
 function onDepartmentChanged() {
-  // If catalog is no longer valid for selected department, reset it
   if (form.errorCatalogId) {
     const valid = availableCatalogs.value.some(c => c.id === Number(form.errorCatalogId));
     if (!valid) {
@@ -565,9 +560,7 @@ function searchPicUsers(event) {
   searchUsers(event, picSuggestions);
 }
 
-function searchCheckerUsers(event) {
-  searchUsers(event, checkerSuggestions);
-}
+// [ĐÃ SỬA] Đã xóa hàm searchCheckerUsers
 
 function getSelectionInputClass(field) {
   const errorClass = hasError(field) ? 'border-rose-400 ring-1 ring-rose-300' : 'border-slate-200 dark:border-slate-700';
@@ -587,7 +580,10 @@ async function loadExistingRecord() {
         form.departmentId = rec.departmentId;
         form.projectId = rec.projectId;
         form.picUserId = rec.picUserId;
-        form.checkerUserId = rec.checkerUserId;
+        
+        // [ĐÃ SỬA] Gán giá trị checkerName từ record khi load dữ liệu chỉnh sửa
+        form.checkerName = rec.checkerName || rec.checker || '';
+        
         form.errorCatalogId = rec.errorCatalogId;
         form.defectDescription = rec.defectDescription;
         form.quantity = rec.quantity;
@@ -630,7 +626,10 @@ function validateForm() {
   if (!form.departmentId) errors.push('Team / Department is required');
   if (!form.projectId) errors.push('Project No. is required');
   if (!form.picUserId) errors.push('PIC is required');
-  if (!form.checkerUserId) errors.push('Checker is required');
+  
+  // [ĐÃ SỬA] Validate chuỗi nhập checkerName thay vì checkerUserId
+  if (!form.checkerName || !form.checkerName.trim()) errors.push('Checker is required');
+
   if (!form.errorCatalogId) errors.push('Error Catalog is required');
   if (!form.defectDescription || !form.defectDescription.trim()) errors.push('Defect Description cannot be empty');
   if (!form.quantity || form.quantity <= 0) errors.push('Quantity must be greater than 0');
@@ -668,16 +667,26 @@ async function handleSubmit() {
         life: 3000
       });
     } else {
-      const created = await store.createRecord(form);
-      toast.add({
-        severity: 'success',
-        summary: 'Record Created',
-        detail: `New Failure Cost #${created.id} saved successfully`,
-        life: 3000
-      });
+      const created = await createFailureCostList(form);
+      console.log("form:", form);
+      console.log("created:", created);
+      if (created.success) {
+        toast.add({
+          severity: 'success',
+          summary: 'Record Created',
+          detail: `New Failure Cost #${created.id} saved successfully`,
+          life: 3000
+        });
+      } else {
+        toast.add({
+          severity: 'error',
+          summary: 'Record Create Failed',
+          detail: `Failed to create record #${created.id}`,
+          life: 3000
+        });
+      }
     }
 
-    // Return to list after successful save
     router.push('/02_Fcost/fcostList');
   } catch (err) {
     toast.add({
