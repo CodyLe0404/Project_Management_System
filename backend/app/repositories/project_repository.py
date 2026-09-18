@@ -158,6 +158,7 @@ class ProjectRepository:
                 "displayName": row.fullname,
                 "email": row.email,
                 "userConfig": get_per.permission_codes.split(";") if get_per.permission_codes else [],
+                "employeeId": row.employee_id,
             }
         finally:
             cursor.close()
@@ -209,5 +210,84 @@ class ProjectRepository:
                 return [dict(zip(columns, row)) for row in cursor.fetchall()]
             finally:
                 cursor.close()
+                
+    def create_fcost_list(self, payload: dict) -> dict[str, Any]:
+        cursor = self.conn.cursor()
+        
+        error_date = payload.get("errorDate")
+        department_id = payload.get("departmentId")
+        project_id = payload.get("projectId")
+        pic_user_id = payload.get("picUserId")
+        checker_name = payload.get("checkerName")
+        error_catalog_id = payload.get("errorCatalogId")
+        defect_description = payload.get("defectDescription", "")
+        quantity = payload.get("quantity", 1)
+        failure_cost_usd = payload.get("failureCostUSD", 0.0)
+        analysis_4m_id = payload.get("analysis4MId")
+        root_cause = payload.get("rootCause", "")
+        correction = payload.get("correction", "")
+        prevention = payload.get("prevention", "")
+        status_id = payload.get("statusId")
+        remark = payload.get("remark", "")
+        created_by = payload.get("createdBy")
 
+        # 1. Cập nhật đúng tên Stored Procedure
+        sql_script = """
+            EXEC [dbo].[USP_PM_FC_Create_List_Item]
+                @ErrorDate = ?,
+                @DepartmentId = ?,
+                @ProjectId = ?,
+                @PICUserId = ?,
+                @CheckerName = ?,
+                @ErrorCatalogId = ?,
+                @DefectDescription = ?,
+                @Quantity = ?,
+                @FailureCostUSD = ?,
+                @Analysis4MId = ?,
+                @RootCause = ?,
+                @Correction = ?,
+                @Prevention = ?,
+                @StatusId = ?,
+                @Remark = ?,
+                @CreatedBy = ?
+        """
+
+        params = (
+            error_date, department_id, project_id, pic_user_id, checker_name,
+            error_catalog_id, defect_description, quantity, failure_cost_usd,
+            analysis_4m_id, root_cause, correction, prevention, status_id,
+            remark, created_by
+        )
+
+        try:
+            cursor.execute(sql_script, params)
+
+            # Fetch dòng kết quả trước
+            row = cursor.fetchone()
+            
+            result_data = None
+            if row and cursor.description:
+                columns = [column[0] for column in cursor.description]
+                result_data = dict(zip(columns, row))
+
+            # Commit transaction sau khi đã lấy xong dữ liệu
+            self.conn.commit() 
+
+            if result_data:
+                return {"success": True, "data": result_data}
+
+            return {
+                "success": True,
+                "message": "Insert thành công nhưng không có dữ liệu trả về",
+            }
+
+        except pyodbc.Error as e:
+            self.conn.rollback()
+            return {"success": False, "error": str(e)}
+
+        finally:
+            cursor.close()
+
+    
+    
     

@@ -265,6 +265,11 @@ class ProjectService:
             raw_data = self.repository.get_fcost_common_data(payload.condition)
             return raw_data
     
+    def create_failure_cost_list(self, payload: dict) -> dict[str, Any]:
+            result = self.repository.create_fcost_list(payload)
+            return result
+        
+        
     @staticmethod
     def _parse_datetime(value: str | None) -> datetime | None:
         if not value:
