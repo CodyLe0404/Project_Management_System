@@ -19,15 +19,15 @@ const STORAGE_KEY = 'failure_cost_records_v1';
 // Helper: load records from localStorage with fallback to initial mock dataset
 function loadRecords() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialFailureCostRecords));
-      return [...initialFailureCostRecords];
-    }
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed;
-    }
+    // const raw = localStorage.getItem(STORAGE_KEY);
+    // if (!raw) {
+    //   localStorage.setItem(STORAGE_KEY, JSON.stringify(initialFailureCostRecords));
+    //   return [...initialFailureCostRecords];
+    // }
+    // const parsed = JSON.parse(raw);
+    // if (Array.isArray(parsed) && parsed.length > 0) {
+    //   return parsed;
+    // }
     return [...initialFailureCostRecords];
   } catch (err) {
     console.error('Error loading failure cost records from localStorage:', err);
