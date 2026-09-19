@@ -67,8 +67,8 @@
           @change="onDepartmentChange"
         >
           <option :value="null">All Departments</option>
-          <option v-for="dept in departments" :key="dept.id" :value="dept.id">
-            {{ dept.name }}
+          <option v-for="dept in departments" :key="dept.departmentId" :value="dept.departmentId">
+            {{ dept.departmentName }}
           </option>
         </select>
       </div>
@@ -139,8 +139,8 @@
           class="w-full px-3 py-1.5 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none"
         >
           <option :value="null">All Catalogs</option>
-          <option v-for="cat in availableCatalogs" :key="cat.id" :value="cat.id">
-            {{ cat.name }}
+          <option v-for="cat in availableCatalogs" :key="cat.errorCatalogId" :value="cat.errorCatalogId">
+            {{ cat.errorName }}
           </option>
         </select>
       </div>
@@ -159,13 +159,13 @@
         >
           <option :value="null">All PICs</option>
           <option v-for="u in users" :key="u.id" :value="u.id">
-            {{ u.name }} ({{ u.departmentName }})
+            {{ u.name }} - {{ u.fullname }}
           </option>
         </select>
       </div>
 
       <!-- Checker (if enabled) -->
-      <div v-if="showChecker">
+      <!-- <div v-if="showChecker">
         <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
           Checker
         </label>
@@ -178,7 +178,7 @@
             {{ u.name }} ({{ u.departmentName }})
           </option>
         </select>
-      </div>
+      </div> -->
 
       <!-- 4M Analysis -->
       <div>
@@ -190,7 +190,7 @@
           class="w-full px-3 py-1.5 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none"
         >
           <option :value="null">All 4M Categories</option>
-          <option v-for="m in analysis4MList" :key="m.id" :value="m.id">
+          <option v-for="m in analysis4MList" :key="m.analysis4MId" :value="m.analysis4MId">
             {{ m.name }}
           </option>
         </select>
@@ -278,7 +278,7 @@ const availableCatalogs = computed(() => {
 function onDepartmentChange() {
   // If catalog belongs to a different department, reset it
   if (localFilter.errorCatalogId) {
-    const valid = availableCatalogs.value.some(c => c.id === Number(localFilter.errorCatalogId));
+    const valid = availableCatalogs.value.some(c => c.errorCatalogId === Number(localFilter.errorCatalogId));
     if (!valid) {
       localFilter.errorCatalogId = null;
     }
