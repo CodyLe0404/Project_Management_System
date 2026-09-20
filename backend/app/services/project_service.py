@@ -269,6 +269,9 @@ class ProjectService:
             result = self.repository.create_fcost_list(payload)
             return result
         
+    def update_failure_cost_list(self, payload: dict) -> dict[str, Any]:
+            result = self.repository.update_fcost_list(payload)
+            return result 
         
     @staticmethod
     def _parse_datetime(value: str | None) -> datetime | None:

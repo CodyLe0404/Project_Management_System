@@ -288,6 +288,79 @@ class ProjectRepository:
         finally:
             cursor.close()
 
-    
-    
-    
+    def update_fcost_list(self, payload: dict) -> dict[str, Any]:
+        cursor = self.conn.cursor()
+        
+        error_id = payload.get("errorId")
+        error_date = payload.get("errorDate")
+        department_id = payload.get("departmentId")
+        project_id = payload.get("projectId")
+        pic_user_id = payload.get("picUserId")
+        checker_name = payload.get("checkerName")
+        error_catalog_id = payload.get("errorCatalogId")
+        defect_description = payload.get("defectDescription", "")
+        quantity = payload.get("quantity", 1)
+        failure_cost_usd = payload.get("failureCostUSD", 0.0)
+        analysis_4m_id = payload.get("analysis4MId")
+        root_cause = payload.get("rootCause", "")
+        correction = payload.get("correction", "")
+        prevention = payload.get("prevention", "")
+        status_id = payload.get("statusId")
+        remark = payload.get("remark", "")
+        updated_by = payload.get("updatedBy")
+
+        sql_script = """
+                    EXEC [dbo].[USP_PM_FC_Update_Error_List]
+                        @ErrorId = ?,
+                        @ErrorDate = ?,
+                        @DepartmentId = ?,
+                        @ProjectId = ?,
+                        @PicUserId = ?,
+                        @CheckerName = ?,
+                        @ErrCatId = ?,
+                        @DefectDesc = ?,
+                        @Quantity = ?,
+                        @FCostUSD = ?,
+                        @Analysis4MId = ?,
+                        @RootCause = ?,
+                        @Correction = ?,
+                        @Prevention = ?,
+                        @StatusId = ?,
+                        @Remark = ?,
+                        @UpdatedBy = ?
+                    """
+
+        params = (
+            error_id, error_date, department_id, project_id, pic_user_id, checker_name,
+            error_catalog_id, defect_description, quantity, failure_cost_usd,
+            analysis_4m_id, root_cause, correction, prevention, status_id,
+            remark, updated_by
+        )
+
+        try:
+            cursor.execute(sql_script, params)
+
+            # Fetch dòng kết quả trước
+            row_result = cursor.fetchone()
+            
+            result_data = None
+            if row_result and cursor.description:
+                columns_result = [column[0] for column in cursor.description]
+                result_data = dict(zip(columns_result, row_result))
+
+            # Commit transaction sau khi đã lấy xong dữ liệu
+            self.conn.commit() 
+
+            if result_data:
+                return {"success": True, "data": result_data}
+            return {
+                "success": True,
+                "message": "Update thành công nhưng không có dữ liệu trả về"
+            }
+        except pyodbc.Error as e:
+            self.conn.rollback()
+            return {"success": False, "error": str(e)}
+        
+        finally:
+            cursor.close() 
+            

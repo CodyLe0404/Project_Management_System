@@ -95,7 +95,14 @@ def get_item_missing_assignee(service: ProjectService = Depends(get_project_serv
 def get_common_data(payload: FailureCostResponse, service: ProjectService = Depends(get_project_service)) -> list:
     return service.get_common_data_fcost(payload)
 
+
 @router.post("/fcost/createlistitem")
-def create_fconst_list(payload: dict, service: ProjectService = Depends(get_project_service)) -> dict:
+def create_fcost_list(payload: dict, service: ProjectService = Depends(get_project_service)) -> dict:
     return service.create_failure_cost_list(payload)
+
+
+@router.put("/fcost/editerrorlist")
+def update_fcost_list(payload: dict, service: ProjectService = Depends(get_project_service)) -> dict:
+    return service.update_failure_cost_list(payload)
+
 
