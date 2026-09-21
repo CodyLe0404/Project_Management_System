@@ -9,6 +9,7 @@ from app.repositories.project_repository import ProjectRepository
 from app.services.personal_kpi_builder import PersonalKPIBuilder
 from app.services.dept_kpi_builder import DeptKPIBuilder
 from app.services.dashboard_builder import DashboardBuilder
+from app.services.fcost_data_builder import FcostDataBuilder
 from app.utils.security import encrypt_password
 
 
@@ -261,9 +262,13 @@ class ProjectService:
         raw_data = self.repository.get_item_data_missing()
         return raw_data
     
-    def get_common_data_fcost(self, payload: dict) -> list[dict[str, Any]]:
-        raw_data = self.repository.get_fcost_common_data(payload.condition)
-        return raw_data
+    def get_common_data_fcost(self, payload: Any) -> dict[str, Any] | list[dict[str, Any]]:
+        condition = payload.condition
+        if not condition:
+            builder = FcostDataBuilder(self.repository.get_fcost_common_data)
+            return builder.build()
+
+        return self.repository.get_fcost_common_data(condition)
     
     def create_failure_cost_list(self, payload: dict) -> dict[str, Any]:
         result = self.repository.create_fcost_list(payload)

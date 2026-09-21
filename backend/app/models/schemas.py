@@ -87,6 +87,6 @@ class BaseResponse(BaseModel):
 
 class FailureCostResponse(BaseModel):
     userId: str
-    condition: str
+    condition: str | None = None
 
 

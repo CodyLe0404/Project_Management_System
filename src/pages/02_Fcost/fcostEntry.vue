@@ -532,18 +532,18 @@ const selectedPicFullname = computed(() => {
 
 // Cascading catalogs for selected department
 const availableCatalogs = computed(() => {
-  if (!form.departmentId || !Array.isArray(store.masterData?.errorCatalogsByDept)) {
+  const catalogsByDepartment = store.masterData?.errorCatalogsByDept;
+  if (!form.departmentId || !catalogsByDepartment || Array.isArray(catalogsByDepartment)) {
     return store.masterData?.allErrorCatalogs || [];
   }
-  const filtered = store.masterData.errorCatalogsByDept.filter(
-    cat => Number(cat.departmentId) === Number(form.departmentId)
-  );
-  return filtered.length > 0 ? filtered : [];
+  return catalogsByDepartment[form.departmentId] || [];
 });
 
 function onDepartmentChanged() {
   if (form.errorCatalogId) {
-    const valid = availableCatalogs.value.some(c => c.id === Number(form.errorCatalogId));
+    const valid = availableCatalogs.value.some(
+      c => Number(c.errorCatalogId ?? c.id) === Number(form.errorCatalogId)
+    );
     if (!valid) {
       form.errorCatalogId = null;
     }

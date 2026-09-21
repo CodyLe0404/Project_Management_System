@@ -14,7 +14,9 @@ const authStore = useAuthStore();
 //   // { id: 4, name: 'Engineering' }
 // ];
 
-export const mockDepartments = await getCommonDataFcost({ userId: authStore.user.userId, condition: 'All_Departments' });
+const fcostData = await getCommonDataFcost({ userId: authStore.user.userId });
+
+export const mockDepartments = fcostData.departments || [];
 
 
 // export const mockErrorCatalogsByDept = {
@@ -51,7 +53,7 @@ export const mockDepartments = await getCommonDataFcost({ userId: authStore.user
 //   ]
 // };
 
-export const mockErrorCatalogsByDept = await getCommonDataFcost({ userId: authStore.user.userId, condition: 'Error_Catalog' });
+export const mockErrorCatalogsByDept = fcostData.errorCatalogs || {};
 
 export const mockAllErrorCatalogs = Object.values(mockErrorCatalogsByDept).flat();
 
@@ -62,7 +64,7 @@ export const mockAllErrorCatalogs = Object.values(mockErrorCatalogsByDept).flat(
 //   { id: 4, name: 'Method (Quy trình - Thiếu cross-check, lỗi checklist FTR)' }
 // ];
 
-export const mock4MAnalysisList = await getCommonDataFcost({ userId: authStore.user.userId, condition: '4M' });
+export const mock4MAnalysisList = fcostData.analysis4m || [];
 
 export const mockStatuses = [
   { id: 1, name: 'Open', color: 'warn' },
@@ -85,7 +87,7 @@ export const mockStatuses = [
 //   { id: 12, projectNo: 'PRJ-2026-012', projectName: 'Emergency Power Transfer Unit' }
 // ];
 
-export const mockProjects = await getCommonDataFcost({ userId: authStore.user.userId, condition: 'All_Projects' });
+export const mockProjects = fcostData.projects || [];
 
 // export const mockUsers = [
 //   { id: 1, name: 'Alex Nguyen', departmentId: 1, departmentName: 'Electrical' },
@@ -100,9 +102,9 @@ export const mockProjects = await getCommonDataFcost({ userId: authStore.user.us
 //   { id: 10, name: 'Vu Thao Vy', departmentId: 1, departmentName: 'Electrical' }
 // ];
 
-export const mockUsers = await getCommonDataFcost({ userId: authStore.user.userId, condition: 'All_Users' });
+export const mockUsers = fcostData.users || [];
 
-export const initialFailureCostRecords = await getCommonDataFcost({ userId: authStore.user.userId, condition: 'Error_List' });
+export const initialFailureCostRecords = fcostData.errorList || [];
 
 // export const initialFailureCostRecords = [
 //   {

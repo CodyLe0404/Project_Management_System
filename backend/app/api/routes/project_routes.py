@@ -92,7 +92,7 @@ def get_item_missing_assignee(service: ProjectService = Depends(get_project_serv
 
 
 @router.post("/fcost/commondata")
-def get_common_data(payload: FailureCostResponse, service: ProjectService = Depends(get_project_service)) -> list:
+def get_common_data(payload: FailureCostResponse, service: ProjectService = Depends(get_project_service)) -> dict | list:
     return service.get_common_data_fcost(payload)
 
 
