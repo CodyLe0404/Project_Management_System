@@ -6,10 +6,10 @@ def encrypt_password(password: str, key: str = "LSE") -> str:
     return "".join(encrypted)
 
 
-def decrypt_password(encrypted_hex: str, key: str = "LSE") -> str:
-    result = []
-    for i in range(0, len(encrypted_hex), 2):
-        value = int(encrypted_hex[i:i+2], 16)
-        original = value ^ ord(key[(i // 2) % len(key)])
-        result.append(chr(original))
-    return "".join(result)
+# def decrypt_password(encrypted_hex: str, key: str = "LSE") -> str:
+#     result = []
+#     for i in range(0, len(encrypted_hex), 2):
+#         value = int(encrypted_hex[i:i+2], 16)
+#         original = value ^ ord(key[(i // 2) % len(key)])
+#         result.append(chr(original))
+#     return "".join(result)

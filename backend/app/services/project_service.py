@@ -9,7 +9,7 @@ from app.repositories.project_repository import ProjectRepository
 from app.services.personal_kpi_builder import PersonalKPIBuilder
 from app.services.dept_kpi_builder import DeptKPIBuilder
 from app.services.dashboard_builder import DashboardBuilder
-from app.utils.security import decrypt_password, encrypt_password
+from app.utils.security import encrypt_password
 
 
 class ProjectService:

@@ -81,34 +81,23 @@ class ProjectRepository:
             self.conn.commit()
             cursor.close()
 
-    def insert_project_row(self, item: dict[str, Any]) -> str:
-        cursor = self.conn.cursor()
-        try:
-            cursor.execute(                 
-                "EXEC USP_PM_Insert_Row_Data ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?",
-                item.get("project_id"),
-                item.get("task_no"),
-                item.get("main_task"),
-                item.get("sub_task"),
-                item.get("qty"),
-                item.get("budget"),
-                item.get("actual_cost") or 0,
-                item.get("assignee") or "",
-                item.get("percent") or 0,
-                item.get("status") or "",
-                item.get("user_id"),
-                item.get("plan_start"),
-                item.get("plan_end"),
-                item.get("actual_start"),
-                item.get("actual_end"),
-                item.get("order_no"),
-                item.get("remark") or ""
-            )
-            row_result = cursor.fetchone()
-            self.conn.commit()
-            return str(row_result[0]) if row_result else "UNKNOWN"
-        finally:
-            cursor.close()
+    # def insert_project_row(self, item: dict[str, Any]) -> str:
+    #     cursor = self.conn.cursor()
+    #     try:
+    #         cursor.execute(
+    #             "EXEC USP_PM_Insert_Row_Data ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?",
+    #             item.get("project_id"), item.get("task_no"), item.get("main_task"),
+    #             item.get("sub_task"), item.get("qty"), item.get("budget"),
+    #             item.get("actual_cost") or 0, item.get("assignee") or "",
+    #             item.get("percent") or 0, item.get("status") or "", item.get("user_id"),
+    #             item.get("plan_start"), item.get("plan_end"), item.get("actual_start"),
+    #             item.get("actual_end"), item.get("order_no"), item.get("remark") or ""
+    #         )
+    #         row_result = cursor.fetchone()
+    #         self.conn.commit()
+    #         return str(row_result[0]) if row_result else "UNKNOWN"
+    #     finally:
+    #         cursor.close()
 
     def insert_project_rows_batch(self, json_data: str) -> str:
         cursor = self.conn.cursor()
