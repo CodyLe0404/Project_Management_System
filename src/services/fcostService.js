@@ -62,3 +62,22 @@ export async function editFailureCostList(payload) {
   return await response.json()
 }
 
+export async function removeFailureCostItem(payload) {
+  const response = await fetch(`${API_BASE}/fcost/delerroritem`, {
+    method: 'PUT',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const text = await response.text()
+    throw new Error(`Failed to remove failure cost item: ${response.status} ${text}`)
+  }
+
+  return await response.json()
+}
+
+

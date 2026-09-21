@@ -408,24 +408,37 @@
       </div>
 
       <!-- Form Bottom Actions -->
-      <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+      <div class="flex items-center justify-between gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
         <Button
+          v-if="isEditMode"
           type="button"
-          label="Cancel"
-          severity="secondary"
+          icon="pi pi-trash"
+          label="Delete"
+          severity="danger"
           outlined
           size="small"
-          class="px-5"
-          @click="handleCancel"
-        />
-        <Button
-          type="submit"
-          :icon="isEditMode ? 'pi pi-check' : 'pi pi-save'"
-          :label="isEditMode ? 'Save Changes' : 'Save Record'"
-          size="small"
           :loading="store.loading"
-          class="px-6 !bg-indigo-600 hover:!bg-indigo-700 !border-indigo-600"
+          @click="handleDelete"
         />
+        <div class="flex items-center gap-3 ml-auto">
+          <Button
+            type="button"
+            label="Cancel"
+            severity="secondary"
+            outlined
+            size="small"
+            class="px-5"
+            @click="handleCancel"
+          />
+          <Button
+            type="submit"
+            :icon="isEditMode ? 'pi pi-check' : 'pi pi-save'"
+            :label="isEditMode ? 'Save Changes' : 'Save Record'"
+            size="small"
+            :loading="store.loading"
+            class="px-6 !bg-indigo-600 hover:!bg-indigo-700 !border-indigo-600"
+          />
+        </div>
       </div>
     </form>
   </div>
@@ -436,10 +449,12 @@ import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { AutoComplete, Button } from 'primevue';
 import { useToast } from 'primevue/usetoast';
+import { useConfirm } from 'primevue/useconfirm';
 import { useAuthStore } from '../../stores/auth';
 import { useFailureCostStore } from '../../stores/failureCostStore.js';
 import {
-  createFailureCostList
+  createFailureCostList,
+  removeFailureCostItem
 } from '../../services/fcostService.js';
 
 const authStore = useAuthStore();
@@ -449,6 +464,7 @@ const router = useRouter();
 const store = useFailureCostStore();
 
 const toast = useToast();
+const confirm = useConfirm();
 
 const recordId = computed(() => {
   return route.query.id || route.params.id || null;
@@ -576,14 +592,12 @@ async function loadExistingRecord() {
     try {
       const rec = await store.fetchRecordById(recordId.value);
       if (rec) {
+        form.errorId = rec.errorId ?? rec.id ?? Number(recordId.value);
         form.errorDate = rec.errorDate;
         form.departmentId = rec.departmentId;
         form.projectId = rec.projectId;
         form.picUserId = rec.picUserId;
-        
-        // [ĐÃ SỬA] Gán giá trị checkerName từ record khi load dữ liệu chỉnh sửa
         form.checkerName = rec.checkerName || rec.checker || '';
-        
         form.errorCatalogId = rec.errorCatalogId;
         form.defectDescription = rec.defectDescription;
         form.quantity = rec.quantity;
@@ -708,6 +722,55 @@ async function handleSubmit() {
       life: 4000
     });
   }
+}
+
+async function handleDelete() {
+  confirm.require({
+    message: `Are you sure you want to delete Failure Cost #${form.errorId}? This action cannot be undone.`,
+    header: 'Confirm Delete',
+    icon: 'pi pi-exclamation-triangle',
+    rejectProps: {
+      label: 'Cancel',
+      severity: 'secondary',
+      outlined: true
+    },
+    acceptProps: {
+      label: 'Delete',
+      severity: 'danger'
+    },
+    accept: async () => {
+      try {
+        const result = await removeFailureCostItem({
+          errorId: form.errorId,
+          updateBy: Number(authStore.user.employeeId)
+        });
+
+        if (result.success) {
+          toast.add({
+            severity: 'success',
+            summary: 'Record Deleted',
+            detail: `Failure Cost #${form.errorId} deleted successfully`,
+            life: 3000
+          });
+          router.push('/02_Fcost/fcostList');
+        } else {
+          toast.add({
+            severity: 'error',
+            summary: 'Delete Failed',
+            detail: `Failed to delete record #${form.errorId}`,
+            life: 3000
+          });
+        }
+      } catch (err) {
+        toast.add({
+          severity: 'error',
+          summary: 'Delete Failed',
+          detail: err.message || 'An error occurred while deleting',
+          life: 4000
+        });
+      }
+    }
+  });
 }
 
 function handleCancel() {

@@ -353,3 +353,38 @@ class ProjectRepository:
         finally:
             cursor.close() 
             
+    def remove_fcost_item(self, payload: dict) -> dict[str, Any]:
+        cursor = self.conn.cursor()
+                
+        error_id = payload.get("errorId")
+        updated_by = payload.get("updatedBy")
+        
+        try:
+            cursor.execute("EXEC USP_PM_FC_Remove_Error_List ?, ?", error_id, updated_by)
+            result_data = cursor.fetchone()
+
+            self.conn.commit() 
+            
+            if result_data:
+                # Lấy danh sách tên các cột từ metadata của cursor
+                columns = [column[0] for column in cursor.description]
+                # Ép kiểu pyodbc.Row -> dict bằng zip
+                row_dict = dict(zip(columns, result_data))
+                
+                return {"success": True, "data": row_dict}
+                
+            return {
+                "success": True,
+                "message": "Update thành công nhưng không có dữ liệu trả về"
+            }
+        except pyodbc.Error as e:
+            self.conn.rollback()
+            return {"success": False, "error": str(e)}
+        
+        finally:
+            cursor.close() 
+        
+    
+    
+    
+    

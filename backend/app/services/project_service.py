@@ -258,20 +258,25 @@ class ProjectService:
         return dashboard.create_dashboard_data(raw_data)
 
     def get_item_missing_data(self)-> list[dict[str, Any]]:
-            raw_data = self.repository.get_item_data_missing()
-            return raw_data
+        raw_data = self.repository.get_item_data_missing()
+        return raw_data
     
     def get_common_data_fcost(self, payload: dict) -> list[dict[str, Any]]:
-            raw_data = self.repository.get_fcost_common_data(payload.condition)
-            return raw_data
+        raw_data = self.repository.get_fcost_common_data(payload.condition)
+        return raw_data
     
     def create_failure_cost_list(self, payload: dict) -> dict[str, Any]:
-            result = self.repository.create_fcost_list(payload)
-            return result
+        result = self.repository.create_fcost_list(payload)
+        return result
         
     def update_failure_cost_list(self, payload: dict) -> dict[str, Any]:
-            result = self.repository.update_fcost_list(payload)
-            return result 
+        result = self.repository.update_fcost_list(payload)
+        return result 
+    
+    def remove_failure_cost_item(self, payload: dict) -> dict[str, Any]:
+        result = self.repository.remove_fcost_item(payload)
+        return result 
+        
         
     @staticmethod
     def _parse_datetime(value: str | None) -> datetime | None:

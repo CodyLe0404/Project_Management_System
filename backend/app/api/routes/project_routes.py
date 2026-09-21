@@ -106,3 +106,8 @@ def update_fcost_list(payload: dict, service: ProjectService = Depends(get_proje
     return service.update_failure_cost_list(payload)
 
 
+@router.put("/fcost/delerroritem")
+def remove_fcost_item(payload: dict, service: ProjectService = Depends(get_project_service)) -> dict:
+    return service.remove_failure_cost_item(payload)
+
+
