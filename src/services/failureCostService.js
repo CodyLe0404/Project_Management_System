@@ -13,36 +13,32 @@ import {
   mockUsers,
   initialFailureCostRecords
 } from '../mock/failureCostMockData.js';
+import { getFailureCostRecords } from './fcostService.js';
 
 const STORAGE_KEY = 'failure_cost_records_v1';
 
 // Helper: load records from localStorage with fallback to initial mock dataset
-function loadRecords() {
+async function loadRecords() {
   try {
-    // const raw = localStorage.getItem(STORAGE_KEY);
-    // if (!raw) {
-    //   localStorage.setItem(STORAGE_KEY, JSON.stringify(initialFailureCostRecords));
-    //   return [...initialFailureCostRecords];
-    // }
-    // const parsed = JSON.parse(raw);
-    // if (Array.isArray(parsed) && parsed.length > 0) {
-    //   return parsed;
-    // }
-    return [...initialFailureCostRecords];
+    const records = await getFailureCostRecords();
+    if (Array.isArray(records)) {
+      return records;
+    }
   } catch (err) {
-    console.error('Error loading failure cost records from localStorage:', err);
-    return [...initialFailureCostRecords];
+    console.error('Error loading failure cost records from API:', err);
   }
+
+  return [...initialFailureCostRecords];
 }
 
 // Helper: save records to localStorage
-function saveRecords(records) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-  } catch (err) {
-    console.error('Error saving failure cost records to localStorage:', err);
-  }
-}
+// function saveRecords(records) {
+//   try {
+//     localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+//   } catch (err) {
+//     console.error('Error saving failure cost records to localStorage:', err);
+//   }
+// }
 
 // Simulated network latency for realistic UX feel
 const delay = (ms = 120) => new Promise(resolve => setTimeout(resolve, ms));
@@ -77,7 +73,7 @@ export async function resetFailureCostsToDefault() {
  */
 export async function getFailureCosts(filterParams = {}, pagination = null) {
   await delay(150);
-  let records = loadRecords();
+  let records = await loadRecords();
 
   // 1. Apply Date Filter
   if (filterParams.fromDate) {
@@ -141,7 +137,7 @@ export async function getFailureCosts(filterParams = {}, pagination = null) {
   }
 
   // Sort by date descending by default
-  records.sort((a, b) => new Date(b.errorDate) - new Date(a.errorDate) || b.id - a.id);
+  // records.sort((a, b) => new Date(b.errorDate) - new Date(a.errorDate) || b.id - a.id);
 
   const total = records.length;
 
@@ -176,7 +172,7 @@ export async function getFailureCosts(filterParams = {}, pagination = null) {
  */
 export async function getFailureCostById(id) {
   await delay(100);
-  const records = loadRecords();
+  const records = await loadRecords();
   const record = records.find(r => r.id === Number(id));
   if (!record) {
     throw new Error(`Failure Cost record #${id} not found`);
@@ -189,7 +185,7 @@ export async function getFailureCostById(id) {
  */
 export async function createFailureCost(payload) {
   await delay(200);
-  const records = loadRecords();
+  const records = await loadRecords();
 
   const nextId = records.length > 0 ? Math.max(...records.map(r => r.id)) + 1 : 1;
 
@@ -240,7 +236,7 @@ export async function createFailureCost(payload) {
 
 export async function updateFailureCostList(id, payload) {
   await delay(200);
-  const records = loadRecords();
+  const records = await loadRecords();
   const index = records.findIndex(r => r.id === Number(id));
   if (index === -1) {
     throw new Error(`Failure Cost record #${id} not found`);
@@ -252,7 +248,7 @@ export async function updateFailureCostList(id, payload) {
  */
 export async function updateFailureCost(id, payload) {
   await delay(200);
-  const records = loadRecords();
+  const records = await loadRecords();
   const index = records.findIndex(r => r.id === Number(id));
   if (index === -1) {
     throw new Error(`Failure Cost record #${id} not found`);
@@ -306,7 +302,7 @@ export async function updateFailureCost(id, payload) {
  */
 export async function deleteFailureCost(id) {
   await delay(150);
-  const records = loadRecords();
+  const records = await loadRecords();
   const filtered = records.filter(r => r.id !== Number(id));
   if (filtered.length === records.length) {
     throw new Error(`Failure Cost record #${id} not found`);

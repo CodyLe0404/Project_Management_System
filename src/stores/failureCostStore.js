@@ -4,12 +4,8 @@ import {
   getMasterData,
   getFailureCosts,
   getFailureCostById,
-  createFailureCost,
-  updateFailureCost,
-  deleteFailureCost,
   getFailureCostDashboard,
-  resetFailureCostsToDefault,
-  updateFailureCostList
+  resetFailureCostsToDefault
 } from '../services/failureCostService.js';
 
 import { editFailureCostList } from '../services/fcostService.js';
@@ -165,48 +161,10 @@ export const useFailureCostStore = defineStore('failureCost', () => {
     }
   }
 
-  /**
-   * Create new Failure Cost record
-   */
-  async function createRecord(payload) {
-    loading.value = true;
-    error.value = null;
-    try {
-      const created = await createFailureCost(payload);
-      // Refresh list & dashboard
-      await fetchRecords();
-      return created;
-    } catch (err) {
-      console.error('Failed to create record:', err);
-      error.value = err.message;
-      throw err;
-    } finally {
-      loading.value = false;
-    }
-  }
+  // async function createRecord(payload) { ... }
+  // async function updateRecord(id, payload) { ... }
 
-  /**
-   * Update existing Failure Cost record
-   */
-  async function updateRecord(id, payload) {
-    loading.value = true;
-    error.value = null;
-    try {
-      const updated = await updateFailureCost(id, payload);
-      currentRecord.value = updated;
-      // Refresh list & dashboard
-      await fetchRecords();
-      return updated;
-    } catch (err) {
-      console.error(`Failed to update record #${id}:`, err);
-      error.value = err.message;
-      throw err;
-    } finally {
-      loading.value = false;
-    }
-  }
-
-  async function updateRecordList(id, payload) {
+  async function updateFailureCostList(id, payload) {
     loading.value = true;
     error.value = null;
     try {
@@ -218,6 +176,9 @@ export const useFailureCostStore = defineStore('failureCost', () => {
 
       // 2. Gọi hàm editFailureCostList với new_payload
       const result = await editFailureCostList(new_payload);
+      if (result.success) {
+        await fetchRecords();
+      }
       return result;
     } catch (err) {
       console.error(`Failed to edit record #${id}:`, err);
@@ -228,24 +189,7 @@ export const useFailureCostStore = defineStore('failureCost', () => {
     }
   }
 
-  /**
-   * Delete record by ID
-   */
-  async function deleteRecord(id) {
-    loading.value = true;
-    error.value = null;
-    try {
-      const success = await deleteFailureCost(id);
-      await fetchRecords();
-      return success;
-    } catch (err) {
-      console.error(`Failed to delete record #${id}:`, err);
-      error.value = err.message;
-      throw err;
-    } finally {
-      loading.value = false;
-    }
-  }
+  // async function deleteRecord(id) { ... }
 
   /**
    * Filter controls
@@ -305,10 +249,7 @@ export const useFailureCostStore = defineStore('failureCost', () => {
     fetchRecords,
     fetchDashboard,
     fetchRecordById,
-    createRecord,
-    updateRecord,
-    updateRecordList,
-    deleteRecord,
+    updateFailureCostList,
     setFilter,
     resetFilter,
     setPage,

@@ -19,6 +19,13 @@ export async function getCommonDataFcost(payload) {
   return await response.json()
 }
 
+export async function getFailureCostRecords(payload = {}) {
+  return getCommonDataFcost({
+    userId: payload.userId || '',
+    condition: 'Error_List'
+  });
+}
+
 export async function createFailureCostList(payload) {
   const response = await fetch(`${API_BASE}/fcost/createlistitem`, {
     method: 'POST',
