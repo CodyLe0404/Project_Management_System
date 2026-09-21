@@ -660,7 +660,7 @@ async function handleSubmit() {
   try {
     if (isEditMode.value) {
       // await store.updateRecord(recordId.value, form);
-      const update_result = await store.updateRecordList(recordId.value, form);
+      const update_result = await store.updateFailureCostList(recordId.value, form);
       if (update_result.success) {
         toast.add({
           severity: 'success',
@@ -682,6 +682,7 @@ async function handleSubmit() {
       const created = await createFailureCostList(form);
 
       if (created.success) {
+        await store.fetchRecords();
         toast.add({
           severity: 'success',
           summary: 'Record Created',
