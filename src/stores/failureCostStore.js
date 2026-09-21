@@ -8,8 +8,11 @@ import {
   updateFailureCost,
   deleteFailureCost,
   getFailureCostDashboard,
-  resetFailureCostsToDefault
+  resetFailureCostsToDefault,
+  updateFailureCostList
 } from '../services/failureCostService.js';
+
+import { editFailureCostList } from '../services/fcostService.js';
 
 export const useFailureCostStore = defineStore('failureCost', () => {
   // Master data
@@ -203,6 +206,28 @@ export const useFailureCostStore = defineStore('failureCost', () => {
     }
   }
 
+  async function updateRecordList(id, payload) {
+    loading.value = true;
+    error.value = null;
+    try {
+      // 1. Tạo new_payload dạng dictionary (object) có 'id' là key/property đầu tiên
+      const new_payload = {
+        errorId: id,
+        ...payload
+      };
+
+      // 2. Gọi hàm editFailureCostList với new_payload
+      const result = await editFailureCostList(new_payload);
+      return result;
+    } catch (err) {
+      console.error(`Failed to edit record #${id}:`, err);
+      error.value = err.message || 'An error occurred';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   /**
    * Delete record by ID
    */
@@ -282,6 +307,7 @@ export const useFailureCostStore = defineStore('failureCost', () => {
     fetchRecordById,
     createRecord,
     updateRecord,
+    updateRecordList,
     deleteRecord,
     setFilter,
     resetFilter,
@@ -290,3 +316,5 @@ export const useFailureCostStore = defineStore('failureCost', () => {
     resetToInitialDataset
   };
 });
+
+

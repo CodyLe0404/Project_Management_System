@@ -238,6 +238,15 @@ export async function createFailureCost(payload) {
   return { ...newRecord };
 }
 
+export async function updateFailureCostList(id, payload) {
+  await delay(200);
+  const records = loadRecords();
+  const index = records.findIndex(r => r.id === Number(id));
+  if (index === -1) {
+    throw new Error(`Failure Cost record #${id} not found`);
+  }
+}
+
 /**
  * Update an existing Failure Cost record
  */

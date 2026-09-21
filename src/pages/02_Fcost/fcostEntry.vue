@@ -447,7 +447,7 @@ const authStore = useAuthStore();
 const route = useRoute();
 const router = useRouter();
 const store = useFailureCostStore();
-console.log("Store:", store);
+
 const toast = useToast();
 
 const recordId = computed(() => {
@@ -659,17 +659,28 @@ async function handleSubmit() {
 
   try {
     if (isEditMode.value) {
-      await store.updateRecord(recordId.value, form);
-      toast.add({
-        severity: 'success',
-        summary: 'Record Updated',
-        detail: `Failure Cost #${recordId.value} updated successfully`,
-        life: 3000
-      });
-    } else {
+      // await store.updateRecord(recordId.value, form);
+      const update_result = await store.updateRecordList(recordId.value, form);
+      if (update_result.success) {
+        toast.add({
+          severity: 'success',
+          summary: 'Record Updated',
+          detail: `Failure Cost #${recordId.value} updated successfully`,
+          life: 3000
+        });
+      }
+      else {
+        toast.add({
+          severity: 'error',
+          summary: 'Record Update Failed',
+          detail: `Failed to update record #${recordId.value}`,
+          life: 3000
+        });
+      }
+    } 
+    else {
       const created = await createFailureCostList(form);
-      console.log("form:", form);
-      console.log("created:", created);
+
       if (created.success) {
         toast.add({
           severity: 'success',

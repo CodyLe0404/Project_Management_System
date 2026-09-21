@@ -112,7 +112,6 @@ const selectedRecord = ref(null);
 
 onMounted(async () => {
   await store.fetchRecords();
-  console.log("store", store)
 });
 
 async function handleApplyFilter(newFilter) {
