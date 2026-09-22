@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE || "http://10.13.227.117:8000";
+const API_BASE = import.meta.env.VITE_API_BASE;// || "http://10.13.227.117:8000";
 
 
 export async function getCommonDataFcost(payload) {

@@ -1,7 +1,5 @@
+const API_BASE = import.meta.env.VITE_API_BASE;// || "http://10.13.227.253:8000";
 
-import axios from 'axios'
-
-const API_BASE = import.meta.env.VITE_API_BASE || "http://10.13.227.253:8000";
 
 export async function createProject(project) {
   const response = await fetch(`${API_BASE}/projects`, {
