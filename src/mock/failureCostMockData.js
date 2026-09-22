@@ -14,9 +14,9 @@ const authStore = useAuthStore();
 //   // { id: 4, name: 'Engineering' }
 // ];
 
-const fcostData = await getCommonDataFcost({ userId: authStore.user.userId });
+let mockDataPromise;
 
-export const mockDepartments = fcostData.departments || [];
+export let mockDepartments = [];
 
 
 // export const mockErrorCatalogsByDept = {
@@ -53,9 +53,9 @@ export const mockDepartments = fcostData.departments || [];
 //   ]
 // };
 
-export const mockErrorCatalogsByDept = fcostData.errorCatalogs || {};
+export let mockErrorCatalogsByDept = {};
 
-export const mockAllErrorCatalogs = Object.values(mockErrorCatalogsByDept).flat();
+export let mockAllErrorCatalogs = [];
 
 // export const mock4MAnalysisList = [
 //   { id: 1, name: 'Man (Con người - Sai sót cá nhân, copy-paste thiếu rà soát)' },
@@ -64,7 +64,7 @@ export const mockAllErrorCatalogs = Object.values(mockErrorCatalogsByDept).flat(
 //   { id: 4, name: 'Method (Quy trình - Thiếu cross-check, lỗi checklist FTR)' }
 // ];
 
-export const mock4MAnalysisList = fcostData.analysis4m || [];
+export let mock4MAnalysisList = [];
 
 export const mockStatuses = [
   { id: 1, name: 'Open', color: 'warn' },
@@ -87,7 +87,7 @@ export const mockStatuses = [
 //   { id: 12, projectNo: 'PRJ-2026-012', projectName: 'Emergency Power Transfer Unit' }
 // ];
 
-export const mockProjects = fcostData.projects || [];
+export let mockProjects = [];
 
 // export const mockUsers = [
 //   { id: 1, name: 'Alex Nguyen', departmentId: 1, departmentName: 'Electrical' },
@@ -102,9 +102,26 @@ export const mockProjects = fcostData.projects || [];
 //   { id: 10, name: 'Vu Thao Vy', departmentId: 1, departmentName: 'Electrical' }
 // ];
 
-export const mockUsers = fcostData.users || [];
+export let mockUsers = [];
 
-export const initialFailureCostRecords = fcostData.errorList || [];
+export let initialFailureCostRecords = [];
+
+export function initializeFailureCostMockData() {
+  if (!mockDataPromise) {
+    mockDataPromise = getCommonDataFcost({ userId: authStore.user?.userId || '' })
+      .then((fcostData) => {
+        mockDepartments = fcostData.departments || [];
+        mockErrorCatalogsByDept = fcostData.errorCatalogs || {};
+        mockAllErrorCatalogs = Object.values(mockErrorCatalogsByDept).flat();
+        mock4MAnalysisList = fcostData.analysis4m || [];
+        mockProjects = fcostData.projects || [];
+        mockUsers = fcostData.users || [];
+        initialFailureCostRecords = fcostData.errorList || [];
+      });
+  }
+
+  return mockDataPromise;
+}
 
 // export const initialFailureCostRecords = [
 //   {

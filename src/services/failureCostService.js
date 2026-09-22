@@ -4,6 +4,7 @@
  */
 
 import {
+  initializeFailureCostMockData,
   mockDepartments,
   mockErrorCatalogsByDept,
   mockAllErrorCatalogs,
@@ -14,13 +15,15 @@ import {
   initialFailureCostRecords
 } from '../mock/failureCostMockData.js';
 import { getFailureCostRecords } from './fcostService.js';
+import { useAuthStore } from '../stores/auth';
 
 const STORAGE_KEY = 'failure_cost_records_v1';
+const authStore = useAuthStore();
 
 // Helper: load records from localStorage with fallback to initial mock dataset
 async function loadRecords() {
   try {
-    const records = await getFailureCostRecords();
+    const records = await getFailureCostRecords({userId : authStore.user.userId});
     if (Array.isArray(records)) {
       return records;
     }
@@ -48,6 +51,7 @@ const delay = (ms = 120) => new Promise(resolve => setTimeout(resolve, ms));
  */
 export async function getMasterData() {
   await delay(50);
+  await initializeFailureCostMockData();
   return {
     departments: mockDepartments,
     errorCatalogsByDept: mockErrorCatalogsByDept,
