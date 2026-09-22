@@ -361,8 +361,8 @@ export async function getFailureCostDashboard(filterParams = {}) {
   const deptCostMap = {};
   const deptCountMap = {};
   mockDepartments.forEach(d => {
-    deptCostMap[d.name] = 0;
-    deptCountMap[d.name] = 0;
+    deptCostMap[d.departmentName] = 0;
+    deptCountMap[d.departmentName] = 0;
   });
 
   records.forEach(r => {
@@ -372,10 +372,18 @@ export async function getFailureCostDashboard(filterParams = {}) {
   });
 
   const costByDepartment = mockDepartments.map(d => ({
-    department: d.name,
-    cost: deptCostMap[d.name] || 0,
-    count: deptCountMap[d.name] || 0
+    department: d.departmentName,
+    cost: deptCostMap[d.departmentName] || 0,
+    count: deptCountMap[d.departmentName] || 0
   }));
+
+  if (deptCountMap['Other'] > 0) {
+    costByDepartment.push({
+      department: 'Other',
+      cost: deptCostMap['Other'] || 0,
+      count: deptCountMap['Other'] || 0
+    });
+  }
 
   // 4. Chart 3 — Failure Cost by Error Catalog
   const catalogCostMap = {};
@@ -393,25 +401,20 @@ export async function getFailureCostDashboard(filterParams = {}) {
   })).sort((a, b) => b.cost - a.cost);
 
   // 5. Chart 4 — Errors by 4M Analysis (Man, Machine, Material, Method)
-  const count4MMap = {
-    Man: 0,
-    Machine: 0,
-    Material: 0,
-    Method: 0
-  };
-  const cost4MMap = {
-    Man: 0,
-    Machine: 0,
-    Material: 0,
-    Method: 0
-  };
+  const count4MMap = { Man: 0, Machine: 0, Material: 0, Method: 0 };
+  const cost4MMap = { Man: 0, Machine: 0, Material: 0, Method: 0 };
+
+  const KEYS_4M = ['Man', 'Machine', 'Material', 'Method'];
 
   records.forEach(r => {
-    const m = r.analysis4MName || 'Method';
-    if (count4MMap[m] !== undefined) {
-      count4MMap[m]++;
-      cost4MMap[m] += (Number(r.failureCostUSD) || 0);
-    }
+    const rawName = r.analysis4MName || '';
+    
+    // Trích xuất key chuẩn (Man, Machine, Material, Method) từ chuỗi dài
+    const matchedKey = KEYS_4M.find(key => rawName.startsWith(key)) || 'Method';
+
+    // Cộng dồn dữ liệu vào key chuẩn đã tìm được
+    count4MMap[matchedKey]++;
+    cost4MMap[matchedKey] += (Number(r.failureCostUSD) || 0);
   });
 
   const errorsBy4M = {
