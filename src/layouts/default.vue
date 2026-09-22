@@ -75,7 +75,7 @@
         </div>
     </main>
     
-    <ConfirmDialog />
+    <ConfirmDialog defaultFocus="none" />
   </div>
 </template>
 

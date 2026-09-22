@@ -29,6 +29,7 @@ export default defineConfig(({ mode }) => ({
     vue(),
     Pages({
       dirs: 'src/pages',
+      importMode: 'async',
     }),
     Layouts({
       layoutsDirs: 'src/layouts',
@@ -51,6 +52,18 @@ export default defineConfig(({ mode }) => ({
             }
             if (id.includes('pako')) {
               return 'pako';
+            }
+            if (id.includes('handsontable')) {
+              return 'handsontable';
+            }
+            if (id.includes('@antv')) {
+              return 'antv';
+            }
+            if (id.includes('crypto-js')) {
+              return 'crypto';
+            }
+            if (id.includes('axios')) {
+              return 'axios';
             }
             // default fallback for other node_modules
             return 'vendor-libs';
