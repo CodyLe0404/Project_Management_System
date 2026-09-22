@@ -742,7 +742,7 @@ async function handleDelete() {
       try {
         const result = await removeFailureCostItem({
           errorId: form.errorId,
-          updateBy: Number(authStore.user.employeeId)
+          updatedBy: Number(authStore.user.employeeId)
         });
 
         if (result.success) {

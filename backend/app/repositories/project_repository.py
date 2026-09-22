@@ -296,7 +296,7 @@ class ProjectRepository:
         prevention = payload.get("prevention", "")
         status_id = payload.get("statusId")
         remark = payload.get("remark", "")
-        updated_by = payload.get("updatedBy")
+        updated_by = payload.get("createdBy")
 
         sql_script = """
                     EXEC [dbo].[USP_PM_FC_Update_Error_List]
