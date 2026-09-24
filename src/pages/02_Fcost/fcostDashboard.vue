@@ -2,7 +2,7 @@
 {
   meta: {
     title: "Dashboard",
-    icon: "pi pi-chart-bar",
+    icon: "pi pi-building-columns",
     permission: ["DS_PMS_DK", "admin"],
   }
 }
