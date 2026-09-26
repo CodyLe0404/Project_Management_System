@@ -34,15 +34,6 @@ async function loadRecords() {
   return [...initialFailureCostRecords];
 }
 
-// Helper: save records to localStorage
-// function saveRecords(records) {
-//   try {
-//     localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-//   } catch (err) {
-//     console.error('Error saving failure cost records to localStorage:', err);
-//   }
-// }
-
 // Simulated network latency for realistic UX feel
 const delay = (ms = 120) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -184,59 +175,6 @@ export async function getFailureCostById(id) {
   return { ...record };
 }
 
-/**
- * Create a new Failure Cost record
- */
-export async function createFailureCost(payload) {
-  await delay(200);
-  const records = await loadRecords();
-
-  const nextId = records.length > 0 ? Math.max(...records.map(r => r.id)) + 1 : 1;
-
-  // Lookup master data names for clean denormalized presentation
-  const dept = mockDepartments.find(d => d.id === Number(payload.departmentId));
-  const project = mockProjects.find(p => p.id === Number(payload.projectId));
-  const pic = mockUsers.find(u => u.id === Number(payload.picUserId));
-  const checker = mockUsers.find(u => u.id === Number(payload.checkerUserId));
-  const catalog = mockAllErrorCatalogs.find(c => c.id === Number(payload.errorCatalogId));
-  const m4 = mock4MAnalysisList.find(m => m.analysis4MId === Number(payload.analysis4MId));
-  const status = mockStatuses.find(s => s.id === Number(payload.statusId));
-
-  const nowIso = new Date().toISOString();
-
-  const newRecord = {
-    id: nextId,
-    errorDate: payload.errorDate,
-    departmentId: Number(payload.departmentId),
-    departmentName: dept ? dept.name : (payload.departmentName || ''),
-    projectId: Number(payload.projectId),
-    projectNo: project ? project.projectNo : (payload.projectNo || ''),
-    projectName: project ? project.projectName : (payload.projectName || ''),
-    picUserId: Number(payload.picUserId),
-    picName: pic ? pic.name : (payload.picName || ''),
-    checkerUserId: Number(payload.checkerUserId),
-    checkerName: checker ? checker.name : (payload.checkerName || ''),
-    errorCatalogId: Number(payload.errorCatalogId),
-    errorCatalogName: catalog ? catalog.name : (payload.errorCatalogName || ''),
-    defectDescription: payload.defectDescription || '',
-    quantity: Number(payload.quantity) || 1,
-    failureCostUSD: Number(payload.failureCostUSD) || 0,
-    analysis4MId: Number(payload.analysis4MId),
-    analysis4MName: m4 ? m4.name : (payload.analysis4MName || ''),
-    rootCause: payload.rootCause || '',
-    correction: payload.correction || '',
-    prevention: payload.prevention || '',
-    statusId: Number(payload.statusId),
-    statusName: status ? status.name : (payload.statusName || 'Open'),
-    remark: payload.remark || '',
-    createdAt: nowIso,
-    updatedAt: nowIso
-  };
-
-  records.unshift(newRecord);
-  saveRecords(records);
-  return { ...newRecord };
-}
 
 export async function updateFailureCostList(id, payload) {
   await delay(200);
@@ -245,74 +183,6 @@ export async function updateFailureCostList(id, payload) {
   if (index === -1) {
     throw new Error(`Failure Cost record #${id} not found`);
   }
-}
-
-/**
- * Update an existing Failure Cost record
- */
-export async function updateFailureCost(id, payload) {
-  await delay(200);
-  const records = await loadRecords();
-  const index = records.findIndex(r => r.id === Number(id));
-  if (index === -1) {
-    throw new Error(`Failure Cost record #${id} not found`);
-  }
-
-  const existing = records[index];
-
-  const dept = mockDepartments.find(d => d.id === Number(payload.departmentId));
-  const project = mockProjects.find(p => p.id === Number(payload.projectId));
-  const pic = mockUsers.find(u => u.id === Number(payload.picUserId));
-  const checker = mockUsers.find(u => u.id === Number(payload.checkerUserId));
-  const catalog = mockAllErrorCatalogs.find(c => c.id === Number(payload.errorCatalogId));
-  const m4 = mock4MAnalysisList.find(m => m.analysis4MId === Number(payload.analysis4MId));
-  const status = mockStatuses.find(s => s.id === Number(payload.statusId));
-
-  const updatedRecord = {
-    ...existing,
-    errorDate: payload.errorDate || existing.errorDate,
-    departmentId: payload.departmentId ? Number(payload.departmentId) : existing.departmentId,
-    departmentName: dept ? dept.name : (payload.departmentName || existing.departmentName),
-    projectId: payload.projectId ? Number(payload.projectId) : existing.projectId,
-    projectNo: project ? project.projectNo : (payload.projectNo || existing.projectNo),
-    projectName: project ? project.projectName : (payload.projectName || existing.projectName),
-    picUserId: payload.picUserId ? Number(payload.picUserId) : existing.picUserId,
-    picName: pic ? pic.name : (payload.picName || existing.picName),
-    checkerUserId: payload.checkerUserId ? Number(payload.checkerUserId) : existing.checkerUserId,
-    checkerName: checker ? checker.name : (payload.checkerName || existing.checkerName),
-    errorCatalogId: payload.errorCatalogId ? Number(payload.errorCatalogId) : existing.errorCatalogId,
-    errorCatalogName: catalog ? catalog.name : (payload.errorCatalogName || existing.errorCatalogName),
-    defectDescription: payload.defectDescription !== undefined ? payload.defectDescription : existing.defectDescription,
-    quantity: payload.quantity !== undefined ? Number(payload.quantity) : existing.quantity,
-    failureCostUSD: payload.failureCostUSD !== undefined ? Number(payload.failureCostUSD) : existing.failureCostUSD,
-    analysis4MId: payload.analysis4MId ? Number(payload.analysis4MId) : existing.analysis4MId,
-    analysis4MName: m4 ? m4.name : (payload.analysis4MName || existing.analysis4MName),
-    rootCause: payload.rootCause !== undefined ? payload.rootCause : existing.rootCause,
-    correction: payload.correction !== undefined ? payload.correction : existing.correction,
-    prevention: payload.prevention !== undefined ? payload.prevention : existing.prevention,
-    statusId: payload.statusId ? Number(payload.statusId) : existing.statusId,
-    statusName: status ? status.name : (payload.statusName || existing.statusName),
-    remark: payload.remark !== undefined ? payload.remark : existing.remark,
-    updatedAt: new Date().toISOString()
-  };
-
-  records[index] = updatedRecord;
-  saveRecords(records);
-  return { ...updatedRecord };
-}
-
-/**
- * Delete a Failure Cost record
- */
-export async function deleteFailureCost(id) {
-  await delay(150);
-  const records = await loadRecords();
-  const filtered = records.filter(r => r.id !== Number(id));
-  if (filtered.length === records.length) {
-    throw new Error(`Failure Cost record #${id} not found`);
-  }
-  saveRecords(filtered);
-  return true;
 }
 
 /**
