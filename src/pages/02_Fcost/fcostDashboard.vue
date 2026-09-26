@@ -98,6 +98,7 @@
             <tr class="bg-slate-50 dark:bg-slate-900/80 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
               <th class="px-4 py-3 whitespace-nowrap">Date</th>
               <th class="px-4 py-3 whitespace-nowrap">Project</th>
+              <th class="px-4 py-3 whitespace-nowrap">Document No</th>
               <th class="px-4 py-3 whitespace-nowrap">Team</th>
               <th class="px-4 py-3 whitespace-nowrap">Error Catalog</th>
               <th class="px-4 py-3 text-center whitespace-nowrap">Quantity</th>
@@ -120,6 +121,9 @@
                 <span class="font-bold text-indigo-600 dark:text-indigo-400">{{ rec.projectNo }}</span>
                 <span class="text-slate-400 mx-1">-</span>
                 <span class="text-slate-700 dark:text-slate-300">{{ rec.projectName }}</span>
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap font-medium text-slate-700 dark:text-slate-300">
+                {{ rec.documentNo }}
               </td>
               <td class="px-4 py-3 whitespace-nowrap">
                 <span

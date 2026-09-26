@@ -52,6 +52,7 @@
             <th class="px-4 py-3.5 whitespace-nowrap">Date</th>
             <th class="px-4 py-3.5 whitespace-nowrap">Team</th>
             <th class="px-4 py-3.5 min-w-[200px]">Project</th>
+            <th class="px-4 py-3.5 min-w-[200px]">Document No</th>
             <th class="px-4 py-3.5 whitespace-nowrap">PIC</th>
             <th class="px-4 py-3.5 whitespace-nowrap">Error Catalog</th>
             <th class="px-4 py-3.5 text-center whitespace-nowrap">Qty</th>
@@ -109,6 +110,11 @@
                 <span class="text-slate-400 mx-1">-</span>
                 <span class="text-slate-700 dark:text-slate-300">{{ record.projectName }}</span>
               </div>
+            </td>
+
+            <!-- Document -->
+            <td class="px-4 py-3 whitespace-nowrap font-medium text-slate-700 dark:text-slate-300">
+              {{ record.documentNo }}
             </td>
 
             <!-- PIC -->
