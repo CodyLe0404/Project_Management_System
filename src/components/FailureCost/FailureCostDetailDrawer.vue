@@ -46,7 +46,7 @@
               <i class="pi pi-info-circle"></i> Error Information
             </h3>
 
-            <div class="grid grid-cols-2 gap-3 text-xs">
+            <div class="grid grid-cols-3 gap-3 text-xs">
               <div>
                 <span class="text-slate-400 block mb-0.5">Error Date</span>
                 <span class="font-bold text-slate-800 dark:text-slate-200">{{ record.errorDate }}</span>
@@ -62,6 +62,12 @@
                 </span>
               </div>
 
+              <div>
+                <span class="text-slate-400 block mb-0.5">Document No.</span>
+                <span class="font-bold text-slate-800 dark:text-slate-200">{{ record.documentNo }}</span>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3 text-xs">
               <div class="col-span-2">
                 <span class="text-slate-400 block mb-0.5">Project</span>
                 <div class="font-semibold text-slate-900 dark:text-slate-100">

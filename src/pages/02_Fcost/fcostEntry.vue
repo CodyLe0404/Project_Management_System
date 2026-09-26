@@ -78,35 +78,49 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-          <!-- Date -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Date <span class="text-rose-500">*</span>
-            </label>
-            <input
-              v-model="form.errorDate"
-              type="date"
-              class="form-control"
-              :class="hasError('errorDate') ? 'border-rose-400 ring-1 ring-rose-300' : 'border-slate-200 dark:border-slate-700'"
-            />
+          <!-- Date and Team / Department section-->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Date <span class="text-rose-500">*</span>
+              </label>
+              <input
+                v-model="form.errorDate"
+                type="date"
+                class="form-control"
+                :class="hasError('errorDate') ? 'border-rose-400 ring-1 ring-rose-300' : 'border-slate-200 dark:border-slate-700'"
+              />
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Team / Department <span class="text-rose-500">*</span>
+              </label>
+              <select
+                v-model="form.departmentId"
+                class="form-control"
+                :class="hasError('departmentId') ? 'border-rose-400 ring-1 ring-rose-300' : 'border-slate-200 dark:border-slate-700'"
+                @change="onDepartmentChanged"
+              >
+                <option :value="null" disabled>-- Select Department --</option>
+                <option v-for="dept in store.masterData.departments" :key="dept.departmentId" :value="dept.departmentId">
+                  {{ dept.departmentName }}
+                </option>
+              </select>
+            </div>
           </div>
 
-          <!-- Team / Department -->
+          <!-- Document Number -->
           <div>
             <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Team / Department <span class="text-rose-500">*</span>
+              Document No. <span class="text-rose-500">*</span>
             </label>
-            <select
-              v-model="form.departmentId"
-              class="form-control"
-              :class="hasError('departmentId') ? 'border-rose-400 ring-1 ring-rose-300' : 'border-slate-200 dark:border-slate-700'"
-              @change="onDepartmentChanged"
-            >
-              <option :value="null" disabled>-- Select Department --</option>
-              <option v-for="dept in store.masterData.departments" :key="dept.departmentId" :value="dept.departmentId">
-                {{ dept.departmentName }}
-              </option>
-            </select>
+            <input
+              type="text"
+              v-model="form.documentNo"
+              placeholder="Nhập document number..."
+              class="w-full form-control-autocomplete"
+              :class="getSelectionInputClass('documentNo')"
+            />
           </div>
 
           <!-- Project No. -->
@@ -476,6 +490,7 @@ const isEditMode = computed(() => !!recordId.value);
 const form = reactive({
   errorDate: new Date().toISOString().split('T')[0],
   departmentId: null,
+  documentNo: '',
   projectId: null,
   picUserId: null,
   checkerName: '', 
@@ -595,6 +610,7 @@ async function loadExistingRecord() {
         form.errorId = rec.errorId ?? rec.id ?? Number(recordId.value);
         form.errorDate = rec.errorDate;
         form.departmentId = rec.departmentId;
+        form.documentNo = rec.documentNo || '';
         form.projectId = rec.projectId;
         form.picUserId = rec.picUserId;
         form.checkerName = rec.checkerName || rec.checker || '';
@@ -638,6 +654,7 @@ function validateForm() {
 
   if (!form.errorDate) errors.push('Date is required');
   if (!form.departmentId) errors.push('Team / Department is required');
+  if (!form.documentNo || !form.documentNo.trim()) errors.push('Document No. is required');
   if (!form.projectId) errors.push('Project No. is required');
   if (!form.picUserId) errors.push('PIC is required');
   

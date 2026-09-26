@@ -205,6 +205,7 @@ class ProjectRepository:
         
         error_date = payload.get("errorDate")
         department_id = payload.get("departmentId")
+        doc_no = payload.get("documentNo")
         project_id = payload.get("projectId")
         pic_user_id = payload.get("picUserId")
         checker_name = payload.get("checkerName")
@@ -225,6 +226,7 @@ class ProjectRepository:
             EXEC [dbo].[USP_PM_FC_Create_List_Item]
                 @ErrorDate = ?,
                 @DepartmentId = ?,
+                @DocNo = ?,
                 @ProjectId = ?,
                 @PICUserId = ?,
                 @CheckerName = ?,
@@ -242,7 +244,7 @@ class ProjectRepository:
         """
 
         params = (
-            error_date, department_id, project_id, pic_user_id, checker_name,
+            error_date, department_id, doc_no, project_id, pic_user_id, checker_name,
             error_catalog_id, defect_description, quantity, failure_cost_usd,
             analysis_4m_id, root_cause, correction, prevention, status_id,
             remark, created_by
@@ -283,6 +285,7 @@ class ProjectRepository:
         error_id = payload.get("errorId")
         error_date = payload.get("errorDate")
         department_id = payload.get("departmentId")
+        doc_no = payload.get("documentNo")
         project_id = payload.get("projectId")
         pic_user_id = payload.get("picUserId")
         checker_name = payload.get("checkerName")
@@ -303,6 +306,7 @@ class ProjectRepository:
                         @ErrorId = ?,
                         @ErrorDate = ?,
                         @DepartmentId = ?,
+                        @DocNo = ?,
                         @ProjectId = ?,
                         @PicUserId = ?,
                         @CheckerName = ?,
@@ -320,7 +324,7 @@ class ProjectRepository:
                     """
 
         params = (
-            error_id, error_date, department_id, project_id, pic_user_id, checker_name,
+            error_id, error_date, department_id, doc_no, project_id, pic_user_id, checker_name,
             error_catalog_id, defect_description, quantity, failure_cost_usd,
             analysis_4m_id, root_cause, correction, prevention, status_id,
             remark, updated_by
