@@ -24,3 +24,19 @@ def get_database_config() -> dict[str, str]:
         "password": os.getenv("DB_PASSWORD", section.get("password", "")),
         "port": os.getenv("DB_PORT", section.get("port", "1433")),
     }
+
+
+def get_file_upload_directory() -> Path:
+    config = _load_config()
+    section = config["FILE_STORAGE"] if config.has_section("FILE_STORAGE") else {}
+    configured_path = os.getenv(
+        "FCOST_UPLOAD_DIRECTORY",
+        section.get("upload_directory", r"D:\Workplace\03_Testing\PM_System\Failure_Cost_File"),
+    )
+    return Path(configured_path)
+
+
+def get_api_base_url() -> str:
+    config = _load_config()
+    section = config["API"] if config.has_section("API") else {}
+    return os.getenv("API_BASE_URL", section.get("link_access", "")).rstrip("/")
