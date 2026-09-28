@@ -179,6 +179,21 @@
             </div>
           </div>
 
+          <!-- Attachments -->
+          <div v-if="record.attachments?.length" class="bg-slate-50/80 dark:bg-slate-800/40 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-700/60 space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-cyan-700 dark:text-cyan-400 flex items-center gap-2">
+              <i class="pi pi-paperclip"></i> Attachments
+            </h3>
+            <ul class="space-y-2 text-xs">
+              <li v-for="(attachment, index) in record.attachments" :key="`${attachment.fileName}-${index}`">
+                <a :href="attachment.downloadUrl" target="_blank" rel="noopener noreferrer" class="break-all font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
+                  {{ attachment.fileName }}
+                </a>
+                <span v-if="attachment.fileSize != null" class="ml-2 text-slate-400">{{ formatFileSize(attachment.fileSize) }}</span>
+              </li>
+            </ul>
+          </div>
+
           <!-- Timestamps -->
           <div class="text-[11px] text-slate-400 flex items-center justify-between px-1">
             <span>Created: {{ formatDate(record.createdAt) }}</span>
@@ -231,6 +246,14 @@ function formatCurrency(val) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   }).format(num);
+}
+
+function formatFileSize(size) {
+  const bytes = Number(size);
+  if (!Number.isFinite(bytes) || bytes < 0) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function formatDate(isoStr) {

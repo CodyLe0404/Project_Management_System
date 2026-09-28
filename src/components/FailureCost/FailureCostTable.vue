@@ -59,13 +59,14 @@
             <th class="px-4 py-3.5 text-right whitespace-nowrap">F-Cost (USD)</th>
             <th class="px-4 py-3.5 text-center whitespace-nowrap">4M</th>
             <th class="px-4 py-3.5 text-center whitespace-nowrap">Status</th>
+            <th class="px-4 py-3.5 min-w-[160px]">Attachments</th>
             <th class="px-4 py-3.5 text-center w-28 whitespace-nowrap">Action</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80 text-xs">
           <!-- Empty State -->
           <tr v-if="!loading && records.length === 0">
-            <td colspan="11" class="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+            <td colspan="13" class="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
               <div class="flex flex-col items-center justify-center gap-2">
                 <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
                   <i class="pi pi-inbox text-xl"></i>
@@ -161,6 +162,24 @@
                 <span class="w-1.5 h-1.5 rounded-full" :class="getStatusDotColor(record.statusName)"></span>
                 {{ record.statusName }}
               </span>
+            </td>
+
+            <!-- Attachments -->
+            <td class="px-4 py-3" @click.stop>
+              <div v-if="record.attachments?.length" class="flex flex-col items-start gap-1">
+                <a
+                  v-for="(attachment, attachmentIndex) in record.attachments"
+                  :key="`${attachment.fileName}-${attachmentIndex}`"
+                  :href="attachment.downloadUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="max-w-48 truncate text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300"
+                  :title="`${attachment.fileName}${attachment.fileSize ? ` (${formatFileSize(attachment.fileSize)})` : ''}`"
+                >
+                  <i class="pi pi-paperclip mr-1"></i>{{ attachment.fileName }}
+                </a>
+              </div>
+              <span v-else class="text-slate-400">-</span>
             </td>
 
             <!-- Actions -->
@@ -298,6 +317,14 @@ function formatCurrency(val) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   }).format(num);
+}
+
+function formatFileSize(size) {
+  const bytes = Number(size);
+  if (!Number.isFinite(bytes) || bytes < 0) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function getDeptBadgeStyle(dept) {
