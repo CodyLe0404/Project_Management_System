@@ -1,9 +1,14 @@
+import json
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import FileResponse
 
 from app.api.dependencies import get_project_service
 from app.core.exceptions import ServiceError
 from app.models.schemas import ChangePasswordRequest, DeleteRowRequest, InsertRowRequest, LoginRequest, ProjectItemUpdate, ProjectPayload, FailureCostResponse
 from app.services.project_service import ProjectService
+from app.utils.file_attachments import resolve_stored_attachment
 
 router = APIRouter()
 
@@ -97,8 +102,34 @@ def get_common_data(payload: FailureCostResponse, service: ProjectService = Depe
 
 
 @router.post("/fcost/createlistitem")
-def create_fcost_list(payload: dict, service: ProjectService = Depends(get_project_service)) -> dict:
-    return service.create_failure_cost_list(payload)
+async def create_fcost_list(request: Request, service: ProjectService = Depends(get_project_service)) -> dict:
+    uploads = []
+    if request.headers.get("content-type", "").startswith("multipart/form-data"):
+        form = await request.form()
+        raw_payload = form.get("payload")
+        if not isinstance(raw_payload, str):
+            raise HTTPException(status_code=400, detail="Multipart request must include a JSON 'payload' field.")
+        try:
+            payload = json.loads(raw_payload)
+        except json.JSONDecodeError as exc:
+            raise HTTPException(status_code=400, detail="The 'payload' field must contain valid JSON.") from exc
+        uploads = [value for key, value in form.multi_items() if key == "files" and hasattr(value, "filename")]
+    else:
+        payload = await request.json()
+
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=422, detail="Failure cost payload must be a JSON object.")
+    result = await service.create_failure_cost_list(payload, uploads)
+    return result
+
+
+@router.get("/fcost/attachments/{stored_name}")
+def download_fcost_attachment(stored_name: str, download_name: str | None = None) -> FileResponse:
+    file_path = resolve_stored_attachment(stored_name)
+    if file_path is None:
+        raise HTTPException(status_code=404, detail="Attachment not found.")
+    safe_download_name = Path(download_name or file_path.name).name
+    return FileResponse(file_path, filename=safe_download_name)
 
 
 @router.put("/fcost/editerrorlist")

@@ -6,10 +6,12 @@ from typing import Any
 from app.core.exceptions import ServiceError
 from app.core.middleware import log_daily
 from app.repositories.project_repository import ProjectRepository
+from app.services.attachment_data_builder import AttachmentDataBuilder
 from app.services.personal_kpi_builder import PersonalKPIBuilder
 from app.services.dept_kpi_builder import DeptKPIBuilder
 from app.services.dashboard_builder import DashboardBuilder
 from app.services.fcost_data_builder import FcostDataBuilder
+from app.utils.file_attachments import save_attachment
 from app.utils.security import encrypt_password
 
 
@@ -266,13 +268,49 @@ class ProjectService:
         condition = payload.condition
         if not condition:
             builder = FcostDataBuilder(self.repository.get_fcost_common_data)
-            return builder.build()
+            data = builder.build()
+            data["errorList"] = AttachmentDataBuilder.enrich_rows(data["errorList"])
+            return data
 
-        return self.repository.get_fcost_common_data(condition)
+        rows = self.repository.get_fcost_common_data(condition)
+        if str(condition).lower() == "error_list":
+            return AttachmentDataBuilder.enrich_rows(rows)
+        return rows
     
-    def create_failure_cost_list(self, payload: dict) -> dict[str, Any]:
+    async def create_failure_cost_list(self, payload: dict, uploads: list[Any] | None = None) -> dict[str, Any]:
         result = self.repository.create_fcost_list(payload)
-        return result
+        if not result.get("success") or not uploads:
+            return result
+
+        data = result.get("data") or {}
+        error_id = next(
+            (value for key, value in data.items() if str(key).lower() in {"errorid", "id"}),
+            None,
+        )
+        if error_id is None:
+            return {**result, "attachmentsSuccess": False, "attachmentError": "Create procedure did not return ErrorId."}
+
+        saved_paths: list[str] = []
+        inserted_count = 0
+        try:
+            for upload in uploads:
+                metadata = await save_attachment(upload)
+                saved_paths.append(metadata["filePath"])
+                insert_data = AttachmentDataBuilder.build_insert_data(int(error_id), metadata, payload.get("createdBy"))
+                print(f"insert_data: {insert_data}")
+                self.repository.insert_fcost_attachment(insert_data)
+                inserted_count += 1
+        except Exception as exc:
+            from pathlib import Path
+
+            for file_path in saved_paths[inserted_count:]:
+                try:
+                    Path(file_path).unlink(missing_ok=True)
+                except OSError:
+                    pass
+            return {**result, "attachmentsSuccess": False, "attachmentError": str(exc)}
+
+        return {**result, "attachmentsSuccess": True}
         
     def update_failure_cost_list(self, payload: dict) -> dict[str, Any]:
         result = self.repository.update_fcost_list(payload)

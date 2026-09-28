@@ -279,6 +279,33 @@ class ProjectRepository:
         finally:
             cursor.close()
 
+    def insert_fcost_attachment(self, payload: dict[str, Any]) -> None:
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute(
+                """
+                EXEC [dbo].[USP_PM_FC_Insert_Error_Attachments]
+                    @ErrorId = ?,
+                    @FileName = ?,
+                    @FilePath = ?,
+                    @FileSize = ?,
+                    @ContentType = ?,
+                    @CreatedBy = ?
+                """,
+                payload.get("errorId"),
+                payload.get("fileName"),
+                payload.get("filePath"),
+                payload.get("fileSize"),
+                payload.get("contentType"),
+                payload.get("createdBy"),
+            )
+            self.conn.commit()
+        except pyodbc.Error:
+            self.conn.rollback()
+            raise
+        finally:
+            cursor.close()
+
     def update_fcost_list(self, payload: dict) -> dict[str, Any]:
         cursor = self.conn.cursor()
         
@@ -388,7 +415,5 @@ class ProjectRepository:
         finally:
             cursor.close() 
         
-    
-    
     
     
