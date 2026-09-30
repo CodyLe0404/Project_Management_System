@@ -55,6 +55,7 @@ class AttachmentDataBuilder:
         attachment_value = cls._get_case_insensitive(row, "attachments", "attachmentList", "files")
         attachments = cls._parse_attachment_value(attachment_value)
 
+        # 1. Trường hợp file đơn dạng attachmentFileName / attachmentFilePath
         if not attachments:
             file_name = cls._get_case_insensitive(row, "attachmentFileName", "fileName")
             file_path = cls._get_case_insensitive(row, "attachmentFilePath", "filePath")
@@ -66,14 +67,40 @@ class AttachmentDataBuilder:
                     "contentType": cls._get_case_insensitive(row, "attachmentContentType", "contentType"),
                 }]
 
+        # 2. BỔ SUNG: Trường hợp chuỗi gộp FileNames và FilePaths phân tách bởi dấu phẩy
+        if not attachments:
+            file_names_str = cls._get_case_insensitive(row, "fileNames")
+            file_paths_str = cls._get_case_insensitive(row, "filePaths")
+            file_size_str = cls._get_case_insensitive(row, "fileSize")
+            content_type_str = cls._get_case_insensitive(row, "contentType")
+            
+            if file_names_str and file_paths_str:
+                # Tách danh sách tên file và đường dẫn file theo dấu phẩy
+                names = [n.strip() for n in str(file_names_str).split(",") if n.strip()]
+                paths = [p.strip() for p in str(file_paths_str).split(",") if p.strip()]
+                sizes = [p.strip() for p in str(file_size_str).split(",") if p.strip()]
+                content_types = [p.strip() for p in str(content_type_str).split(",") if p.strip()]
+
+                # Ghép cặp tương ứng theo chỉ số index
+                for name, path in zip(names, paths):
+                    attachments.append({
+                        "fileName": name,
+                        "filePath": path,
+                        "fileSize": sizes,
+                        "contentType": content_types
+                    })
+
+        # Xóa các field nhạy cảm/nội bộ để dữ liệu trả về sạch sẽ
         private_fields = {
             "attachments", "attachmentlist", "files", "attachmentfilename", "filename",
             "attachmentfilepath", "filepath", "attachmentfilesize", "filesize",
             "attachmentcontenttype", "contenttype",
+            "filenames", "filepaths", "attachmentcount"  # Bổ sung các field cần xóa
         }
         for key in list(enriched):
             if str(key).lower() in private_fields:
                 enriched.pop(key)
+
         enriched["attachments"] = [cls._public_attachment(item) for item in attachments if isinstance(item, dict)]
         return enriched
 
