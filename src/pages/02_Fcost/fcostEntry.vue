@@ -421,6 +421,24 @@
         </div>
       </div>
 
+      <!-- Attachments -->
+      <div v-if="!isEditMode" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-3">
+        <label for="failure-cost-files" class="block text-sm font-bold text-slate-900 dark:text-white">Attachments</label>
+        <input
+          id="failure-cost-files"
+          type="file"
+          multiple
+          class="block w-full text-xs text-slate-600 dark:text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-950 dark:file:text-indigo-300"
+          @change="handleFilesSelected"
+        />
+        <ul v-if="selectedFiles.length" class="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+          <li v-for="(file, index) in selectedFiles" :key="`${file.name}-${file.lastModified}-${index}`" class="flex items-center justify-between gap-3 py-2">
+            <span class="min-w-0 truncate text-slate-700 dark:text-slate-300" :title="file.name">{{ file.name }} <span class="text-slate-400">({{ formatFileSize(file.size) }})</span></span>
+            <Button type="button" icon="pi pi-times" text rounded size="small" :aria-label="`Remove ${file.name}`" @click="removeSelectedFile(index)" />
+          </li>
+        </ul>
+      </div>
+
       <!-- Form Bottom Actions -->
       <div class="flex items-center justify-between gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
         <Button
@@ -511,6 +529,7 @@ const form = reactive({
 const validationErrors = ref([]);
 const projectSuggestions = ref([]);
 const picSuggestions = ref([]);
+const selectedFiles = ref([]);
 
 const selectionInputBaseClass = 'form-control';
 
@@ -600,6 +619,21 @@ function getSelectionInputClass(field) {
 
 function hasError(field) {
   return validationErrors.value.some(err => err.toLowerCase().includes(field.toLowerCase()));
+}
+
+function handleFilesSelected(event) {
+  selectedFiles.value = [...selectedFiles.value, ...Array.from(event.target.files || [])];
+  event.target.value = '';
+}
+
+function removeSelectedFile(index) {
+  selectedFiles.value.splice(index, 1);
+}
+
+function formatFileSize(size) {
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 async function loadExistingRecord() {
@@ -710,16 +744,25 @@ async function handleSubmit() {
       }
     } 
     else {
-      const created = await createFailureCostList(form);
+      const created = await createFailureCostList(form, selectedFiles.value);
 
       if (created.success) {
         await store.fetchRecords();
-        toast.add({
-          severity: 'success',
-          summary: 'Record Created',
-          detail: `New Failure Cost #${created.id} saved successfully`,
-          life: 3000
-        });
+        if (created.attachmentsSuccess === false) {
+          toast.add({
+            severity: 'warn',
+            summary: 'Record Created, Attachments Failed',
+            detail: created.attachmentError || 'The record was created but one or more attachments could not be saved.',
+            life: 5000
+          });
+        } else {
+          toast.add({
+            severity: 'success',
+            summary: 'Record Created',
+            detail: `New Failure Cost #${created.data?.ErrorId ?? created.data?.errorId ?? created.id} saved successfully`,
+            life: 3000
+          });
+        }
       } else {
         toast.add({
           severity: 'error',

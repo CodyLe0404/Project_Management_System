@@ -26,14 +26,17 @@ export async function getFailureCostRecords(payload = {}) {
   });
 }
 
-export async function createFailureCostList(payload) {
+export async function createFailureCostList(payload, files = []) {
+  const body = new FormData();
+  body.append('payload', JSON.stringify(payload));
+  files.forEach(file => body.append('files', file, file.name));
+
   const response = await fetch(`${API_BASE}/fcost/createlistitem`, {
     method: 'POST',
     headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
+      'Accept': 'application/json'
     },
-    body: JSON.stringify(payload)
+    body
   });
 
   if (!response.ok) {
