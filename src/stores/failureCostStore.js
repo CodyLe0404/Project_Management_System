@@ -103,10 +103,7 @@ export const useFailureCostStore = defineStore('failureCost', () => {
     error.value = null;
     try {
       await fetchMasterData();
-      const res = await getFailureCosts(filter, {
-        page: pagination.page,
-        pageSize: pagination.pageSize
-      });
+      const res = await getFailureCosts(filter, {page: pagination.page, pageSize: pagination.pageSize});
       records.value = res.data;
       totalRecords.value = res.total;
       pagination.totalPages = res.totalPages;
