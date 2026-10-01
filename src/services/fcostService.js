@@ -47,14 +47,17 @@ export async function createFailureCostList(payload, files = []) {
   return await response.json()
 }
 
-export async function editFailureCostList(payload) {
+export async function editFailureCostList(payload, files = [], removedAttachmentFileNames = []) {
+  const body = new FormData();
+  body.append('payload', JSON.stringify({ ...payload, removedAttachmentFileNames }));
+  files.forEach(file => body.append('files', file, file.name));
+
   const response = await fetch(`${API_BASE}/fcost/editerrorlist`, {
     method: 'PUT',
     headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
+      'Accept': 'application/json'
     },
-    body: JSON.stringify(payload)
+    body
   });
 
   if (!response.ok) {
