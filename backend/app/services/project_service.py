@@ -312,9 +312,50 @@ class ProjectService:
 
         return {**result, "attachmentsSuccess": True}
         
-    def update_failure_cost_list(self, payload: dict) -> dict[str, Any]:
+    async def update_failure_cost_list(self, payload: dict, uploads: list[Any] | None = None) -> dict[str, Any]:
         result = self.repository.update_fcost_list(payload)
-        return result 
+        removed_file_names = payload.get("removedAttachmentFileNames") or []
+        if not result.get("success") or (not uploads and not removed_file_names):
+            return result
+
+        error_id = payload.get("errorId")
+        if error_id is None:
+            return {**result, "attachmentsSuccess": False, "attachmentError": "Update payload did not include ErrorId."}
+
+        updated_by = payload.get("updatedBy") or payload.get("createdBy")
+        saved_paths: list[str] = []
+        inserted_count = 0
+        try:
+            for upload in uploads or []:
+                metadata = await save_attachment(upload)
+                saved_paths.append(metadata["filePath"])
+                insert_data = AttachmentDataBuilder.build_insert_data(int(error_id), metadata, payload.get("createdBy"))
+                self.repository.insert_fcost_attachment(insert_data)
+                inserted_count += 1
+        except Exception as exc:
+            from pathlib import Path
+
+            for file_path in saved_paths[inserted_count:]:
+                try:
+                    Path(file_path).unlink(missing_ok=True)
+                except OSError:
+                    pass
+            return {**result, "attachmentsSuccess": False, "attachmentError": str(exc)}
+
+        removal_errors: list[str] = []
+        for file_name in removed_file_names:
+            removal_result = self.repository.remove_fcost_attachment(error_id, file_name, updated_by)
+            if not removal_result.get("success"):
+                removal_errors.append(f"{file_name}: {removal_result.get('error', 'Removal failed')}")
+
+        if removal_errors:
+            return {
+                **result,
+                "attachmentsSuccess": False,
+                "attachmentError": "; ".join(removal_errors),
+            }
+
+        return {**result, "attachmentsSuccess": True}
     
     def remove_failure_cost_item(self, payload: dict) -> dict[str, Any]:
         result = self.repository.remove_fcost_item(payload)

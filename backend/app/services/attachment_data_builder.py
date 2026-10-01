@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from itertools import zip_longest
 from pathlib import PurePosixPath
 from typing import Any
 from urllib.parse import quote
@@ -67,35 +68,36 @@ class AttachmentDataBuilder:
                     "contentType": cls._get_case_insensitive(row, "attachmentContentType", "contentType"),
                 }]
 
-        # 2. BỔ SUNG: Trường hợp chuỗi gộp FileNames và FilePaths phân tách bởi dấu phẩy
+        # 2. Trường hợp chuỗi gộp FileNames, FilePaths, FileSizes, ContentTypes phân tách bởi dấu phẩy
         if not attachments:
             file_names_str = cls._get_case_insensitive(row, "fileNames")
             file_paths_str = cls._get_case_insensitive(row, "filePaths")
-            file_size_str = cls._get_case_insensitive(row, "fileSize")
-            content_type_str = cls._get_case_insensitive(row, "contentType")
+            file_sizes_str = cls._get_case_insensitive(row, "fileSizes", "fileSize")
+            content_types_str = cls._get_case_insensitive(row, "contentTypes", "contentType")
             
             if file_names_str and file_paths_str:
-                # Tách danh sách tên file và đường dẫn file theo dấu phẩy
                 names = [n.strip() for n in str(file_names_str).split(",") if n.strip()]
                 paths = [p.strip() for p in str(file_paths_str).split(",") if p.strip()]
-                sizes = [p.strip() for p in str(file_size_str).split(",") if p.strip()]
-                content_types = [p.strip() for p in str(content_type_str).split(",") if p.strip()]
+                
+                sizes = [s.strip() for s in str(file_sizes_str).split(",") if s.strip()] if file_sizes_str else []
+                content_types = [c.strip() for c in str(content_types_str).split(",") if c.strip()] if content_types_str else []
 
-                # Ghép cặp tương ứng theo chỉ số index
-                for name, path in zip(names, paths):
-                    attachments.append({
-                        "fileName": name,
-                        "filePath": path,
-                        "fileSize": sizes,
-                        "contentType": content_types
-                    })
+                # Ghép cặp chính xác từng phần tử theo vị trí index
+                for name, path, size, content_type in zip_longest(names, paths, sizes, content_types, fillvalue=None):
+                    if name and path:
+                        attachments.append({
+                            "fileName": name,
+                            "filePath": path,
+                            "fileSize": size,
+                            "contentType": content_type
+                        })
 
         # Xóa các field nhạy cảm/nội bộ để dữ liệu trả về sạch sẽ
         private_fields = {
             "attachments", "attachmentlist", "files", "attachmentfilename", "filename",
             "attachmentfilepath", "filepath", "attachmentfilesize", "filesize",
             "attachmentcontenttype", "contenttype",
-            "filenames", "filepaths", "attachmentcount"  # Bổ sung các field cần xóa
+            "filenames", "filepaths", "filesizes", "contenttypes", "attachmentcount"
         }
         for key in list(enriched):
             if str(key).lower() in private_fields:

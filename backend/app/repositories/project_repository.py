@@ -306,6 +306,33 @@ class ProjectRepository:
         finally:
             cursor.close()
 
+    def remove_fcost_attachment(self, error_id: int, file_name: str, updated_by: int) -> dict[str, Any]:
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute(
+                """
+                EXEC [dbo].[USP_PM_FC_Remove_Error_List_Attachments]
+                    @errorId = ?,
+                    @fileName = ?,
+                    @updateBy = ?
+                """,
+                error_id,
+                file_name,
+                updated_by,
+            )
+            row = cursor.fetchone()
+            result_data = None
+            if row and cursor.description:
+                columns = [column[0] for column in cursor.description]
+                result_data = dict(zip(columns, row))
+            self.conn.commit()
+            return {"success": True, "data": result_data}
+        except pyodbc.Error as exc:
+            self.conn.rollback()
+            return {"success": False, "error": str(exc)}
+        finally:
+            cursor.close()
+
     def update_fcost_list(self, payload: dict) -> dict[str, Any]:
         cursor = self.conn.cursor()
         

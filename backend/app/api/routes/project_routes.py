@@ -133,8 +133,24 @@ def download_fcost_attachment(stored_name: str, download_name: str | None = None
 
 
 @router.put("/fcost/editerrorlist")
-def update_fcost_list(payload: dict, service: ProjectService = Depends(get_project_service)) -> dict:
-    return service.update_failure_cost_list(payload)
+async def update_fcost_list(request: Request, service: ProjectService = Depends(get_project_service)) -> dict:
+    uploads = []
+    if request.headers.get("content-type", "").startswith("multipart/form-data"):
+        form = await request.form()
+        raw_payload = form.get("payload")
+        if not isinstance(raw_payload, str):
+            raise HTTPException(status_code=400, detail="Multipart request must include a JSON 'payload' field.")
+        try:
+            payload = json.loads(raw_payload)
+        except json.JSONDecodeError as exc:
+            raise HTTPException(status_code=400, detail="The 'payload' field must contain valid JSON.") from exc
+        uploads = [value for key, value in form.multi_items() if key == "files" and hasattr(value, "filename")]
+    else:
+        payload = await request.json()
+
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=422, detail="Failure cost payload must be a JSON object.")
+    return await service.update_failure_cost_list(payload, uploads)
 
 
 @router.put("/fcost/delerroritem")
