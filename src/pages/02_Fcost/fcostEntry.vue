@@ -422,8 +422,35 @@
       </div>
 
       <!-- Attachments -->
-      <div v-if="!isEditMode" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-3">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-3">
         <label for="failure-cost-files" class="block text-sm font-bold text-slate-900 dark:text-white">Attachments</label>
+        <ul v-if="existingAttachments.length" class="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+          <li v-for="(attachment, index) in existingAttachments" :key="`${attachment.downloadUrl || attachment.fileName}-${index}`" class="flex items-center justify-between gap-3 py-2">
+            <div class="flex min-w-0 items-center gap-3">
+              <a
+                v-if="attachment.downloadUrl"
+                :href="attachment.downloadUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="min-w-0 truncate text-indigo-700 hover:underline dark:text-indigo-300"
+                :title="attachment.fileName"
+              >{{ attachment.fileName || 'Download attachment' }}</a>
+              <span v-else class="min-w-0 truncate text-slate-700 dark:text-slate-300" :title="attachment.fileName">{{ attachment.fileName || 'Attachment' }}</span>
+              <span v-if="attachment.fileSize" class="shrink-0 text-slate-400">{{ formatFileSize(Number(attachment.fileSize)) }}</span>
+            </div>
+            <Button
+              v-if="attachment.fileName"
+              type="button"
+              icon="pi pi-trash"
+              text
+              rounded
+              size="small"
+              severity="danger"
+              :aria-label="`Remove ${attachment.fileName}`"
+              @click="removeExistingAttachment(attachment.fileName)"
+            />
+          </li>
+        </ul>
         <input
           id="failure-cost-files"
           type="file"
@@ -431,10 +458,10 @@
           class="block w-full text-xs text-slate-600 dark:text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-950 dark:file:text-indigo-300"
           @change="handleFilesSelected"
         />
-        <ul v-if="selectedFiles.length" class="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
-          <li v-for="(file, index) in selectedFiles" :key="`${file.name}-${file.lastModified}-${index}`" class="flex items-center justify-between gap-3 py-2">
+        <ul v-if="addedAttachments.length" class="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+          <li v-for="(file, index) in addedAttachments" :key="`${file.name}-${file.lastModified}-${index}`" class="flex items-center justify-between gap-3 py-2">
             <span class="min-w-0 truncate text-slate-700 dark:text-slate-300" :title="file.name">{{ file.name }} <span class="text-slate-400">({{ formatFileSize(file.size) }})</span></span>
-            <Button type="button" icon="pi pi-times" text rounded size="small" :aria-label="`Remove ${file.name}`" @click="removeSelectedFile(index)" />
+            <Button type="button" icon="pi pi-times" text rounded size="small" :aria-label="`Remove ${file.name}`" @click="removeAddedAttachment(index)" />
           </li>
         </ul>
       </div>
@@ -529,7 +556,9 @@ const form = reactive({
 const validationErrors = ref([]);
 const projectSuggestions = ref([]);
 const picSuggestions = ref([]);
-const selectedFiles = ref([]);
+const addedAttachments = ref([]);
+const removedAttachmentFileNames = ref([]);
+const existingAttachments = ref([]);
 
 const selectionInputBaseClass = 'form-control';
 
@@ -622,12 +651,19 @@ function hasError(field) {
 }
 
 function handleFilesSelected(event) {
-  selectedFiles.value = [...selectedFiles.value, ...Array.from(event.target.files || [])];
+  addedAttachments.value = [...addedAttachments.value, ...Array.from(event.target.files || [])];
   event.target.value = '';
 }
 
-function removeSelectedFile(index) {
-  selectedFiles.value.splice(index, 1);
+function removeAddedAttachment(index) {
+  addedAttachments.value.splice(index, 1);
+}
+
+function removeExistingAttachment(fileName) {
+  if (!removedAttachmentFileNames.value.includes(fileName)) {
+    removedAttachmentFileNames.value.push(fileName);
+  }
+  existingAttachments.value = existingAttachments.value.filter(attachment => attachment.fileName !== fileName);
 }
 
 function formatFileSize(size) {
@@ -658,6 +694,7 @@ async function loadExistingRecord() {
         form.prevention = rec.prevention;
         form.statusId = rec.statusId;
         form.remark = rec.remark || '';
+        existingAttachments.value = Array.isArray(rec.attachments) ? rec.attachments : [];
       }
     } catch (err) {
       toast.add({
@@ -725,14 +762,28 @@ async function handleSubmit() {
   try {
     if (isEditMode.value) {
       // await store.updateRecord(recordId.value, form);
-      const update_result = await store.updateFailureCostList(recordId.value, form);
+      const update_result = await store.updateFailureCostList(
+        recordId.value,
+        form,
+        addedAttachments.value,
+        removedAttachmentFileNames.value
+      );
       if (update_result.success) {
-        toast.add({
-          severity: 'success',
-          summary: 'Record Updated',
-          detail: `Failure Cost #${recordId.value} updated successfully`,
-          life: 3000
-        });
+        if (update_result.attachmentsSuccess === false) {
+          toast.add({
+            severity: 'warn',
+            summary: 'Record Updated, Attachments Failed',
+            detail: update_result.attachmentError || 'The record was updated but one or more attachments could not be saved.',
+            life: 5000
+          });
+        } else {
+          toast.add({
+            severity: 'success',
+            summary: 'Record Updated',
+            detail: `Failure Cost #${recordId.value} updated successfully`,
+            life: 3000
+          });
+        }
       }
       else {
         toast.add({
@@ -744,7 +795,7 @@ async function handleSubmit() {
       }
     } 
     else {
-      const created = await createFailureCostList(form, selectedFiles.value);
+      const created = await createFailureCostList(form, addedAttachments.value);
 
       if (created.success) {
         await store.fetchRecords();
