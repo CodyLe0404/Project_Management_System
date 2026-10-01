@@ -161,7 +161,7 @@ export const useFailureCostStore = defineStore('failureCost', () => {
   // async function createRecord(payload) { ... }
   // async function updateRecord(id, payload) { ... }
 
-  async function updateFailureCostList(id, payload) {
+  async function updateFailureCostList(id, payload, files = [], removedAttachmentFileNames = []) {
     loading.value = true;
     error.value = null;
     try {
@@ -172,7 +172,7 @@ export const useFailureCostStore = defineStore('failureCost', () => {
       };
 
       // 2. Gọi hàm editFailureCostList với new_payload
-      const result = await editFailureCostList(new_payload);
+      const result = await editFailureCostList(new_payload, files, removedAttachmentFileNames);
       if (result.success) {
         await fetchRecords();
       }
