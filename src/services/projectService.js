@@ -189,3 +189,22 @@ export async function getItemMissingData(userId) {
   return await response.json()
 }
 
+export async function getProjectCommonData(payload) {
+  const response = await fetch(`${API_BASE}/projects/commondata`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  })
+
+  if (!response.ok) {
+    const text = await response.text()
+    throw new Error(
+      `Failed to load common data: ${response.status} ${text}`
+    )
+  }
+
+  return await response.json()
+}
+
