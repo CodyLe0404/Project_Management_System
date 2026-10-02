@@ -277,6 +277,10 @@ class ProjectService:
             return AttachmentDataBuilder.enrich_rows(rows)
         return rows
     
+    def get_common_data_project(self, payload: Any) -> dict[str, Any] | list[dict[str, Any]]:
+        result = self.repository.get_project_common_data(payload.condition)
+        return result
+    
     async def create_failure_cost_list(self, payload: dict, uploads: list[Any] | None = None) -> dict[str, Any]:
         result = self.repository.create_fcost_list(payload)
         if not result.get("success") or not uploads:

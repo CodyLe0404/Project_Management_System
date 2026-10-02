@@ -200,6 +200,15 @@ class ProjectRepository:
             finally:
                 cursor.close()
                 
+    def get_project_common_data(self, condition: str) -> list[dict[str, Any]]:
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute("EXEC [Design_System].[dbo].[USP_PM_Get_Common_Data] ?", condition)
+            columns = [col[0] for col in cursor.description]
+            return [dict(zip(columns, row)) for row in cursor.fetchall()]
+        finally:
+            cursor.close()
+                            
     def create_fcost_list(self, payload: dict) -> dict[str, Any]:
         cursor = self.conn.cursor()
         
