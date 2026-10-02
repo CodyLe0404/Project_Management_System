@@ -97,7 +97,7 @@ def get_item_missing_assignee(service: ProjectService = Depends(get_project_serv
 
 
 @router.post("/fcost/commondata")
-def get_common_data(payload: FailureCostResponse, service: ProjectService = Depends(get_project_service)) -> dict | list:
+def get_fcost_common_data(payload: FailureCostResponse, service: ProjectService = Depends(get_project_service)) -> dict | list:
     return service.get_common_data_fcost(payload)
 
 
@@ -156,5 +156,10 @@ async def update_fcost_list(request: Request, service: ProjectService = Depends(
 @router.put("/fcost/delerroritem")
 def remove_fcost_item(payload: dict, service: ProjectService = Depends(get_project_service)) -> dict:
     return service.remove_failure_cost_item(payload)
+
+
+@router.post("/projects/commondata")
+def get_project_common_data(payload: FailureCostResponse, service: ProjectService = Depends(get_project_service)) -> dict | list:
+    return service.get_common_data_project(payload)
 
 
