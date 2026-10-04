@@ -301,7 +301,6 @@ class ProjectService:
                 metadata = await save_attachment(upload)
                 saved_paths.append(metadata["filePath"])
                 insert_data = AttachmentDataBuilder.build_insert_data(int(error_id), metadata, payload.get("createdBy"))
-                print(f"insert_data: {insert_data}")
                 self.repository.insert_fcost_attachment(insert_data)
                 inserted_count += 1
         except Exception as exc:
