@@ -106,23 +106,33 @@
             </h3>
 
             <div class="grid grid-cols-2 gap-3 text-xs">
-              <div>
+              <!-- Row 1: Reason -->
+              <div class="col-span-2">
+                <span class="text-slate-400 block mb-0.5">Reason</span>
+                <span class="font-bold text-slate-900 dark:text-white text-sm">{{ record.reason }}</span>
+              </div>
+
+              <!-- Row 2: Error Catalog -->
+              <div class="col-span-2">
                 <span class="text-slate-400 block mb-0.5">Error Catalog</span>
                 <span class="font-bold text-slate-900 dark:text-white">{{ record.errorCatalogName }}</span>
               </div>
 
+              <!-- Row 3 (Trái): Quantity -->
               <div>
                 <span class="text-slate-400 block mb-0.5">Quantity</span>
                 <span class="font-bold text-slate-900 dark:text-white text-sm">{{ record.quantity }}</span>
               </div>
 
-              <div class="col-span-2 bg-rose-50/50 dark:bg-rose-950/20 p-3 rounded-xl border border-rose-100 dark:border-rose-900/40 flex items-center justify-between">
-                <span class="text-xs font-semibold text-rose-800 dark:text-rose-300">Failure Cost (USD)</span>
-                <span class="text-xl font-extrabold text-rose-700 dark:text-rose-400 tabular-nums">
+              <!-- Row 3 (Phải): Failure Cost -->
+              <div>
+                <span class="text-slate-400 block mb-0.5">Failure Cost (USD)</span>
+                <span class="font-bold text-slate-900 dark:text-white text-sm tabular-nums">
                   {{ formatCurrency(record.failureCostUSD) }}
                 </span>
               </div>
 
+              <!-- Row 4: Defect Description -->
               <div class="col-span-2">
                 <span class="text-slate-400 block mb-1">Defect Description</span>
                 <div class="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 leading-relaxed text-xs">
