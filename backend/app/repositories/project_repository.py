@@ -208,28 +208,10 @@ class ProjectRepository:
             return [dict(zip(columns, row)) for row in cursor.fetchall()]
         finally:
             cursor.close()
-                            
+                          
     def create_fcost_list(self, payload: dict) -> dict[str, Any]:
         cursor = self.conn.cursor()
-        
-        error_date = payload.get("errorDate")
-        department_id = payload.get("departmentId")
-        doc_no = payload.get("documentNo")
-        project_id = payload.get("projectId")
-        pic_user_id = payload.get("picUserId")
-        checker_name = payload.get("checkerName")
-        error_catalog_id = payload.get("errorCatalogId")
-        defect_description = payload.get("defectDescription", "")
-        quantity = payload.get("quantity", 1)
-        failure_cost_usd = payload.get("failureCostUSD", 0.0)
-        analysis_4m_id = payload.get("analysis4MId")
-        root_cause = payload.get("rootCause", "")
-        correction = payload.get("correction", "")
-        prevention = payload.get("prevention", "")
-        status_id = payload.get("statusId")
-        remark = payload.get("remark", "")
-        created_by = payload.get("createdBy")
-
+    
         # 1. Cập nhật đúng tên Stored Procedure
         sql_script = """
             EXEC [dbo].[USP_PM_FC_Create_List_Item]
@@ -239,6 +221,7 @@ class ProjectRepository:
                 @ProjectId = ?,
                 @PICUserId = ?,
                 @CheckerName = ?,
+                @Reason = ?,
                 @ErrorCatalogId = ?,
                 @DefectDescription = ?,
                 @Quantity = ?,
@@ -253,10 +236,24 @@ class ProjectRepository:
         """
 
         params = (
-            error_date, department_id, doc_no, project_id, pic_user_id, checker_name,
-            error_catalog_id, defect_description, quantity, failure_cost_usd,
-            analysis_4m_id, root_cause, correction, prevention, status_id,
-            remark, created_by
+            payload.get("errorDate"),
+            payload.get("departmentId"),
+            payload.get("documentNo"),
+            payload.get("projectId"),
+            payload.get("picUserId"),
+            payload.get("checkerName"),
+            payload.get("reason"),
+            payload.get("errorCatalogId"),
+            payload.get("defectDescription", ""),
+            payload.get("quantity", 1),
+            payload.get("failureCostUSD", 0.0),
+            payload.get("analysis4MId"),
+            payload.get("rootCause", ""),
+            payload.get("correction", ""),
+            payload.get("prevention", ""),
+            payload.get("statusId"),
+            payload.get("remark", ""),
+            payload.get("createdBy")
         )
 
         try:
@@ -286,7 +283,7 @@ class ProjectRepository:
             return {"success": False, "error": str(e)}
 
         finally:
-            cursor.close()
+            cursor.close()  
 
     def insert_fcost_attachment(self, payload: dict[str, Any]) -> None:
         cursor = self.conn.cursor()
@@ -345,52 +342,49 @@ class ProjectRepository:
     def update_fcost_list(self, payload: dict) -> dict[str, Any]:
         cursor = self.conn.cursor()
         
-        error_id = payload.get("errorId")
-        error_date = payload.get("errorDate")
-        department_id = payload.get("departmentId")
-        doc_no = payload.get("documentNo")
-        project_id = payload.get("projectId")
-        pic_user_id = payload.get("picUserId")
-        checker_name = payload.get("checkerName")
-        error_catalog_id = payload.get("errorCatalogId")
-        defect_description = payload.get("defectDescription", "")
-        quantity = payload.get("quantity", 1)
-        failure_cost_usd = payload.get("failureCostUSD", 0.0)
-        analysis_4m_id = payload.get("analysis4MId")
-        root_cause = payload.get("rootCause", "")
-        correction = payload.get("correction", "")
-        prevention = payload.get("prevention", "")
-        status_id = payload.get("statusId")
-        remark = payload.get("remark", "")
-        updated_by = payload.get("createdBy")
-
         sql_script = """
-                    EXEC [dbo].[USP_PM_FC_Update_Error_List]
-                        @ErrorId = ?,
-                        @ErrorDate = ?,
-                        @DepartmentId = ?,
-                        @DocNo = ?,
-                        @ProjectId = ?,
-                        @PicUserId = ?,
-                        @CheckerName = ?,
-                        @ErrCatId = ?,
-                        @DefectDesc = ?,
-                        @Quantity = ?,
-                        @FCostUSD = ?,
-                        @Analysis4MId = ?,
-                        @RootCause = ?,
-                        @Correction = ?,
-                        @Prevention = ?,
-                        @StatusId = ?,
-                        @Remark = ?,
-                        @UpdatedBy = ?
-                    """
+            EXEC [dbo].[USP_PM_FC_Update_Error_List]
+                @ErrorId = ?,
+                @ErrorDate = ?,
+                @DepartmentId = ?,
+                @DocNo = ?,
+                @ProjectId = ?,
+                @PicUserId = ?,
+                @CheckerName = ?,
+                @Reason = ?,
+                @ErrCatId = ?,
+                @DefectDesc = ?,
+                @Quantity = ?,
+                @FCostUSD = ?,
+                @Analysis4MId = ?,
+                @RootCause = ?,
+                @Correction = ?,
+                @Prevention = ?,
+                @StatusId = ?,
+                @Remark = ?,
+                @UpdatedBy = ?
+            """
 
         params = (
-            error_id, error_date, department_id, doc_no, project_id, pic_user_id, checker_name,
-            error_catalog_id, defect_description, quantity, failure_cost_usd,
-            analysis_4m_id, root_cause, correction, prevention, status_id,
-            remark, updated_by
+            payload.get("errorId"),
+            payload.get("errorDate"),
+            payload.get("departmentId"),
+            payload.get("documentNo"),
+            payload.get("projectId"),
+            payload.get("picUserId"),
+            payload.get("checkerName"),
+            payload.get("reason"),
+            payload.get("errorCatalogId"),
+            payload.get("defectDescription", ""),
+            payload.get("quantity", 1),
+            payload.get("failureCostUSD", 0.0),
+            payload.get("analysis4MId"),
+            payload.get("rootCause", ""),
+            payload.get("correction", ""),
+            payload.get("prevention", ""),
+            payload.get("statusId"),
+            payload.get("remark", ""),
+            payload.get("createdBy")
         )
 
         try:
