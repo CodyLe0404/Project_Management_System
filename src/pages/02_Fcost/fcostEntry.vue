@@ -236,6 +236,20 @@
         </div>
 
         <div class="space-y-4 text-xs">
+          <!-- Reason (Large Textarea) -->
+          <div>
+            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Reason <span class="text-rose-500">*</span>
+            </label>
+            <textarea
+              v-model="form.reason"
+              rows="2"
+              placeholder="Describe the reason for the failure..."
+              class="w-full px-3 py-2 text-xs border rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all leading-relaxed"
+              :class="hasError('reason') ? 'border-rose-400 ring-1 ring-rose-300' : 'border-slate-200 dark:border-slate-700'"
+            ></textarea>
+          </div>
+
           <!-- Error Catalog (Cascading) -->
           <div>
             <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -266,7 +280,7 @@
             </label>
             <textarea
               v-model="form.defectDescription"
-              rows="4"
+              rows="2"
               placeholder="Describe the defect, discrepancy, or error symptom in detail..."
               class="w-full px-3 py-2 text-xs border rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all leading-relaxed"
               :class="hasError('defectDescription') ? 'border-rose-400 ring-1 ring-rose-300' : 'border-slate-200 dark:border-slate-700'"
@@ -539,6 +553,7 @@ const form = reactive({
   projectId: null,
   picUserId: null,
   checkerName: '', 
+  reason: '', 
   errorCatalogId: null,
   defectDescription: '',
   quantity: 1,
@@ -684,6 +699,7 @@ async function loadExistingRecord() {
         form.projectId = rec.projectId;
         form.picUserId = rec.picUserId;
         form.checkerName = rec.checkerName || rec.checker || '';
+        form.reason = rec.reason || '';
         form.errorCatalogId = rec.errorCatalogId;
         form.defectDescription = rec.defectDescription;
         form.quantity = rec.quantity;
@@ -728,10 +744,8 @@ function validateForm() {
   if (!form.documentNo || !form.documentNo.trim()) errors.push('Document No. is required');
   if (!form.projectId) errors.push('Project No. is required');
   if (!form.picUserId) errors.push('PIC is required');
-  
-  // [ĐÃ SỬA] Validate chuỗi nhập checkerName thay vì checkerUserId
   if (!form.checkerName || !form.checkerName.trim()) errors.push('Checker is required');
-
+  if (!form.reason || !form.reason.trim()) errors.push('Reason cannot be empty');
   if (!form.errorCatalogId) errors.push('Error Catalog is required');
   if (!form.defectDescription || !form.defectDescription.trim()) errors.push('Defect Description cannot be empty');
   if (!form.quantity || form.quantity <= 0) errors.push('Quantity must be greater than 0');
