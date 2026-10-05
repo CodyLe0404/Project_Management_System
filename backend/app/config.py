@@ -26,6 +26,15 @@ def get_database_config() -> dict[str, str]:
     }
 
 
+def get_key_config() -> dict[str, str]:
+    config = _load_config()
+    section = config["KEY_PW"] if config.has_section("KEY_PW") else {}
+
+    return {
+        "key": os.getenv("", section.get("key", "LSELECTRIC"))
+    }
+
+
 def get_file_upload_directory() -> Path:
     config = _load_config()
     section = config["FILE_STORAGE"] if config.has_section("FILE_STORAGE") else {}
@@ -40,3 +49,5 @@ def get_api_base_url() -> str:
     config = _load_config()
     section = config["API"] if config.has_section("API") else {}
     return os.getenv("API_BASE_URL", section.get("link_access", "")).rstrip("/")
+
+
