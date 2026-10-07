@@ -775,13 +775,13 @@ async function handleSubmit() {
 
   try {
     if (isEditMode.value) {
-      // await store.updateRecord(recordId.value, form);
       const update_result = await store.updateFailureCostList(
         recordId.value,
         form,
         addedAttachments.value,
         removedAttachmentFileNames.value
       );
+
       if (update_result.success) {
         if (update_result.attachmentsSuccess === false) {
           toast.add({
@@ -798,20 +798,23 @@ async function handleSubmit() {
             life: 3000
           });
         }
-      }
-      else {
+        // Navigate back to list only on successful update
+        router.push('/02_Fcost/fcostList');
+        return;
+      } else {
         toast.add({
           severity: 'error',
           summary: 'Record Update Failed',
           detail: `Failed to update record #${recordId.value}`,
           life: 3000
         });
+        // Keep the user on the form so they can retry
+        return;
       }
-    } 
-    else {
+    } else {
       const created = await createFailureCostList(form, addedAttachments.value);
 
-      if (created.success) {
+      if (created && created.success) {
         await store.fetchRecords();
         if (created.attachmentsSuccess === false) {
           toast.add({
@@ -828,17 +831,38 @@ async function handleSubmit() {
             life: 3000
           });
         }
+        // Navigate back to list on successful create
+        router.push('/02_Fcost/fcostList');
+        return;
       } else {
-        toast.add({
-          severity: 'error',
-          summary: 'Record Create Failed',
-          detail: `Failed to create record #${created.id}`,
-          life: 3000
-        });
+        // Detailed error handling without navigating away
+        // Attempt to detect duplicate / unique constraint errors and show a friendly message
+        const payloadStr = typeof created === 'string' ? created : (created && (created.message || created.error)) ? (created.message || created.error) : JSON.stringify(created || '');
+        const lower = (payloadStr || '').toLowerCase();
+        const isDuplicate = lower.includes('duplicate') || lower.includes('unique') || lower.includes('uq_pm_design_errors') || (lower.includes('violation') && lower.includes('unique'));
+
+        if (isDuplicate) {
+          // flag the documentNo field for user
+          validationErrors.value = ['documentNo: Document No. already exists. Please provide a unique Document No.'];
+          toast.add({
+            severity: 'warn',
+            summary: 'Duplicate Document No.',
+            detail: 'The Document No. you entered already exists. Please update it and click Save Record again.',
+            life: 7000
+          });
+        } else {
+          console.log('Create Failure Cost failed:', created);
+          toast.add({
+            severity: 'error',
+            summary: 'Record Create Failed',
+            detail: (created && (created.message || created.error)) ? (created.message || created.error) : 'Failed to create the record. Please check your input or try again later.',
+            life: 5000
+          });
+        }
+        // Do NOT navigate away; keep the form state intact for the user to fix
+        return;
       }
     }
-
-    router.push('/02_Fcost/fcostList');
   } catch (err) {
     toast.add({
       severity: 'error',
@@ -846,6 +870,8 @@ async function handleSubmit() {
       detail: err.message || 'An error occurred while saving',
       life: 4000
     });
+    // Do not navigate on unexpected exceptions so user doesn't lose input
+    return;
   }
 }
 
