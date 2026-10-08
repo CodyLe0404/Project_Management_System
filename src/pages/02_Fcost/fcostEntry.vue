@@ -564,7 +564,7 @@ const form = reactive({
   prevention: '',
   statusId: 1, // Default 'Open'
   remark: '',
-  createdBy: Number(authStore.user.employeeId) || 1, 
+  createdBy: Number(authStore.user.employeeId), 
   userId: authStore.user.userId,
 });
 
@@ -725,6 +725,16 @@ async function loadExistingRecord() {
 }
 
 onMounted(async () => {
+  if (authStore.user.employeeId === null || authStore.user.employeeId === undefined) {
+    toast.add({
+      severity: 'error',
+      summary: 'User Data Error',
+      detail: 'Employee ID is missing in your user profile. Please logout and login again to fix this issue.',
+      life: 5000
+    });
+    router.push('/02_Fcost/fcostList');
+    return;
+  }
   await store.fetchMasterData();
   await loadExistingRecord();
 });
