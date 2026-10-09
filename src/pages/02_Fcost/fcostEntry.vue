@@ -360,7 +360,7 @@
           </div>
 
           <!-- Correction -->
-          <div>
+          <div v-if="!isCustomerCommentsAnalysis">
             <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Correction (Immediate Fix) <span class="text-rose-500">*</span>
             </label>
@@ -374,7 +374,7 @@
           </div>
 
           <!-- Root Cause -->
-          <div>
+          <div v-if="!isCustomerCommentsAnalysis">
             <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Root Cause <span class="text-rose-500">*</span>
             </label>
@@ -388,7 +388,7 @@
           </div>
 
           <!-- Prevention -->
-          <div>
+          <div v-if="!isCustomerCommentsAnalysis">
             <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Prevention (Systemic Recurrence Prevention) <span class="text-rose-500">*</span>
             </label>
@@ -608,6 +608,13 @@ const selectedPicFullname = computed(() => {
   return user ? user.fullname : '';
 });
 
+const isCustomerCommentsAnalysis = computed(() => {
+  const selectedAnalysis = store.masterData.analysis4MList.find(
+    analysis => Number(analysis.analysis4MId) === Number(form.analysis4MId)
+  );
+  return selectedAnalysis?.name?.trim().toLowerCase() === 'customer comments (khách hàng comments)';
+});
+
 // Cascading catalogs for selected department
 const availableCatalogs = computed(() => {
   const catalogsByDepartment = store.masterData?.errorCatalogsByDept;
@@ -763,9 +770,11 @@ function validateForm() {
     errors.push('Failure Cost (USD) must be greater than or equal to 0');
   }
   if (!form.analysis4MId) errors.push('4M Analysis is required');
-  if (!form.rootCause || !form.rootCause.trim()) errors.push('Root Cause cannot be empty');
-  if (!form.correction || !form.correction.trim()) errors.push('Correction cannot be empty');
-  if (!form.prevention || !form.prevention.trim()) errors.push('Prevention cannot be empty');
+  if (!isCustomerCommentsAnalysis.value) {
+    if (!form.rootCause || !form.rootCause.trim()) errors.push('Root Cause cannot be empty');
+    if (!form.correction || !form.correction.trim()) errors.push('Correction cannot be empty');
+    if (!form.prevention || !form.prevention.trim()) errors.push('Prevention cannot be empty');
+  }
   if (!form.statusId) errors.push('Status is required');
 
   validationErrors.value = errors;
