@@ -107,10 +107,10 @@
 
             <div class="grid grid-cols-2 gap-3 text-xs">
               <!-- Row 1: Reason -->
-              <div class="col-span-2">
+              <!-- <div class="col-span-2">
                 <span class="text-slate-400 block mb-0.5">Reason</span>
                 <span class="font-bold text-slate-900 dark:text-white text-sm">{{ record.reason }}</span>
-              </div>
+              </div> -->
 
               <!-- Row 2: Error Catalog -->
               <div class="col-span-2">

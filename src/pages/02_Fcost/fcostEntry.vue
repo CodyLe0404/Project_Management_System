@@ -237,7 +237,7 @@
 
         <div class="space-y-4 text-xs">
           <!-- Reason (Large Textarea) -->
-          <div>
+          <!-- <div>
             <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Reason <span class="text-rose-500">*</span>
             </label>
@@ -248,7 +248,7 @@
               class="w-full px-3 py-2 text-xs border rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all leading-relaxed"
               :class="hasError('reason') ? 'border-rose-400 ring-1 ring-rose-300' : 'border-slate-200 dark:border-slate-700'"
             ></textarea>
-          </div>
+          </div> -->
 
           <!-- Error Catalog (Cascading) -->
           <div>
@@ -359,20 +359,6 @@
             </select>
           </div>
 
-          <!-- Root Cause -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Root Cause <span class="text-rose-500">*</span>
-            </label>
-            <textarea
-              v-model="form.rootCause"
-              rows="3"
-              placeholder="Why did this error occur? Fundamental breakdown analysis..."
-              class="w-full px-3 py-2 text-xs border rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all leading-relaxed"
-              :class="hasError('rootCause') ? 'border-rose-400 ring-1 ring-rose-300' : 'border-slate-200 dark:border-slate-700'"
-            ></textarea>
-          </div>
-
           <!-- Correction -->
           <div>
             <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -384,6 +370,20 @@
               placeholder="What immediate actions were taken to fix the current defect?"
               class="w-full px-3 py-2 text-xs border rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all leading-relaxed"
               :class="hasError('correction') ? 'border-rose-400 ring-1 ring-rose-300' : 'border-slate-200 dark:border-slate-700'"
+            ></textarea>
+          </div>
+
+          <!-- Root Cause -->
+          <div>
+            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Root Cause <span class="text-rose-500">*</span>
+            </label>
+            <textarea
+              v-model="form.rootCause"
+              rows="3"
+              placeholder="Why did this error occur? Fundamental breakdown analysis..."
+              class="w-full px-3 py-2 text-xs border rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all leading-relaxed"
+              :class="hasError('rootCause') ? 'border-rose-400 ring-1 ring-rose-300' : 'border-slate-200 dark:border-slate-700'"
             ></textarea>
           </div>
 
@@ -553,7 +553,7 @@ const form = reactive({
   projectId: null,
   picUserId: null,
   checkerName: '', 
-  reason: '', 
+  // reason: '', 
   errorCatalogId: null,
   defectDescription: '',
   quantity: 1,
@@ -699,7 +699,7 @@ async function loadExistingRecord() {
         form.projectId = rec.projectId;
         form.picUserId = rec.picUserId;
         form.checkerName = rec.checkerName || rec.checker || '';
-        form.reason = rec.reason || '';
+        // form.reason = rec.reason || '';
         form.errorCatalogId = rec.errorCatalogId;
         form.defectDescription = rec.defectDescription;
         form.quantity = rec.quantity;
@@ -755,7 +755,7 @@ function validateForm() {
   if (!form.projectId) errors.push('Project No. is required');
   if (!form.picUserId) errors.push('PIC is required');
   if (!form.checkerName || !form.checkerName.trim()) errors.push('Checker is required');
-  if (!form.reason || !form.reason.trim()) errors.push('Reason cannot be empty');
+  // if (!form.reason || !form.reason.trim()) errors.push('Reason cannot be empty');
   if (!form.errorCatalogId) errors.push('Error Catalog is required');
   if (!form.defectDescription || !form.defectDescription.trim()) errors.push('Defect Description cannot be empty');
   if (!form.quantity || form.quantity <= 0) errors.push('Quantity must be greater than 0');
