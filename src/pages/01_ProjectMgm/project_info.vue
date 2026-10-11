@@ -101,6 +101,7 @@
 import { ref, onMounted, onBeforeUnmount, toRaw, watch } from 'vue'
 
 import Handsontable from 'handsontable'
+import { useToast } from 'primevue/usetoast'
 
 import 'handsontable/styles/handsontable.css'
 import 'handsontable/styles/ht-theme-main.css'
@@ -121,6 +122,7 @@ import { useAuthStore } from '../../stores/auth';
 registerAllModules()
 
 const authStore = useAuthStore();
+const toast = useToast()
 
 const hotContainer = ref(null)
 const tableData = ref([])
@@ -152,6 +154,16 @@ let insertedRowsToSave = []
 const insertedRowMap = new Map()  // Keep newly inserted rows in a map so their values can be updated immediately as the user edits cells in Handsontable.
 
 const getDeleteCount = () => new Set(deletedItemIds).size
+const hasDeletePermission = () => authStore.hasPermission('DS_PMS_PI_M')
+
+const showDeletePermissionWarning = () => {
+  toast.add({
+    severity: 'warn',
+    summary: 'Permission denied',
+    detail: 'You do not have permission to delete this project row.',
+    life: 4000
+  })
+}
 
 const confirmDeleteRows = (count) => {
   const message = count > 1
@@ -190,6 +202,11 @@ const calculateAndSave = async () => {
   const hasDeletes = deletedItemIds.length > 0
   const hasInserts = insertedRowsToSave.length > 0
   const hasUpdates = changedRows.size > 0
+
+  if (hasDeletes && !hasDeletePermission()) {
+    showDeletePermissionWarning()
+    return
+  }
 
   if (!hasDeletes && !hasInserts && !hasUpdates) {
     alert('Saved successfully')
@@ -516,6 +533,11 @@ const loadData = async () => {
         },
         //id_item of any deleted rows for tracking
         beforeRemoveRow(index, amount) {
+          if (!hasDeletePermission()) {
+            showDeletePermissionWarning()
+            return false
+          }
+
           const removedIds = []
           for (let i = 0; i < amount; i++) {
             const rowIndex = index + i
