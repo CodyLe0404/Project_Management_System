@@ -76,6 +76,31 @@ export async function saveProjectItems(items) {
   return await response.json()
 }
 
+export async function saveHeaderItems(items) {
+  
+  const response = await fetch(
+    `${API_BASE}/project-items/header-update`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(items)
+    }
+  )
+
+  if (!response.ok) {
+
+    const text = await response.text()
+
+    throw new Error(
+      `Failed to save items: ${response.status} ${text}`
+    )
+  }
+
+  return await response.json()
+}
+
 export async function deleteProjectRowData(item_id, username) {
   // console.log('Deleting project row data:', { item_ids: item_id, user_id: username })
   const response = await fetch(
