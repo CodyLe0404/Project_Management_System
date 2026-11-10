@@ -60,6 +60,11 @@ def bulk_update(items: list[ProjectItemUpdate], service: ProjectService = Depend
     return service.bulk_update([item.model_dump() for item in items])
 
 
+@router.put("/project-items/header-update")
+def update_project_header(data_list: list[dict], service: ProjectService = Depends(get_project_service)) -> dict[str, object]:
+    return service.header_update(data_list)
+
+
 @router.post("/Common/Login")
 def login(request: LoginRequest, service: ProjectService = Depends(get_project_service)) -> dict[str, object]:
     try:
