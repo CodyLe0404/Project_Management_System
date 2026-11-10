@@ -113,6 +113,7 @@ import {
 import {
   getProjectsDetails,
   saveProjectItems,
+  saveHeaderItems,
   deleteProjectRowData,
   insertProjectRowData
 } from '../../services/projectService'
@@ -149,6 +150,7 @@ const setViewMode = (mode) => {
 
 let hot = null
 const changedRows = new Set()
+const modifiedHeaderRows = new Set()
 let deletedItemIds = []
 let insertedRowsToSave = []
 const insertedRowMap = new Map()  // Keep newly inserted rows in a map so their values can be updated immediately as the user edits cells in Handsontable.
@@ -196,12 +198,31 @@ const buildUpdatedPayload = () => {
   }))
 }
 
+const buildHeaderUpdate = () => {
+  const payload = []
+
+  for (const headerRow of modifiedHeaderRows) {
+    payload.push({
+      project_id: headerRow.project_id || '',
+      task_no: headerRow.task_no || '',
+      main_task: headerRow.main_task || '',
+      qty: headerRow.qty || 0,
+      budget: headerRow.budget || 0,
+      actual_cost: headerRow.actual_cost === '' ? null : Number(headerRow.actual_cost),
+      user_id: authStore.user.userId
+    })
+  }
+
+  return payload
+}
+
 const calculateAndSave = async () => {
   if (isSaving.value || !hot) return
 
   const hasDeletes = deletedItemIds.length > 0
   const hasInserts = insertedRowsToSave.length > 0
   const hasUpdates = changedRows.size > 0
+  const headerHasChanges = Array.from(modifiedHeaderRows).length > 0
 
   if (hasDeletes && !hasDeletePermission()) {
     showDeletePermissionWarning()
@@ -240,6 +261,15 @@ const calculateAndSave = async () => {
       const payload = buildUpdatedPayload()
       if (payload.length) {
         await saveProjectItems(payload)
+      }
+    }
+
+    if (headerHasChanges) {
+      const payload = buildHeaderUpdate()
+      const resultUpdateHeader = await saveHeaderItems(payload)
+      if (!resultUpdateHeader.success) {
+        alert(resultUpdateHeader.message || 'Cập nhật thất bại!')
+        return 
       }
     }
 
@@ -669,6 +699,10 @@ const loadData = async () => {
 
             // Check whether the edited row is a header/summary row
             if (rowData.is_header) {    
+              if (oldValue !== newValue) {
+                modifiedHeaderRows.add(rowData)
+              }
+
               // Handle main_task change propagation from header to detail rows
               if (prop === 'main_task' && oldValue !== newValue) {
                 let nextRow = row + 1
