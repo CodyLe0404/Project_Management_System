@@ -212,6 +212,11 @@ class ProjectService:
         log_daily(f"[{items[0].get("user_id") if items else 'unknown'}] Update | Bulk update completed. Total items updated: {len(items)}.")
         
         return {"success": True, "updated": len(items)}
+    
+    def header_update(self, data_list):
+        result = self.repository.update_header_project(data_list)
+        log_daily(f"[{data_list[0].get('user_id') if data_list else 'unknown'}] Update | Header update completed.")
+        return result
 
     def login(self, user_id: str, password: str) -> dict[str, Any]:
         encrypted_password = encrypt_password(password)
@@ -246,14 +251,14 @@ class ProjectService:
         return personalKpiData
 
     def get_dept_kpi_data(self) -> dict[str, Any]:
-            raw_data = self.repository.get_kpi_all_data()
-            builder = DeptKPIBuilder()
-            projects_detail, summary_project = builder.transform(raw_data)
-            deptKpiData = {
-                'deptKpiSummary' : summary_project,
-                'deptKpiDetail' : projects_detail
-            }
-            return deptKpiData
+        raw_data = self.repository.get_kpi_all_data()
+        builder = DeptKPIBuilder()
+        projects_detail, summary_project = builder.transform(raw_data)
+        deptKpiData = {
+            'deptKpiSummary' : summary_project,
+            'deptKpiDetail' : projects_detail
+        }
+        return deptKpiData
     
     def get_dashboard_data(self)-> list[dict[str, Any]]:
         raw_data = self.repository.get_dashboard_summary()

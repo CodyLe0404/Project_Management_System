@@ -129,6 +129,58 @@ class ProjectRepository:
         finally:
             cursor.close()
 
+    def update_header_project(self, data_list) -> dict:
+        cursor = self.conn.cursor()
+        try:
+            for payload in data_list:
+                cursor.execute(
+                    """
+                    EXEC [Design_System].[dbo].[USP_PM_Update_Project_Header] ?, ?, ?, ?, ?, ?, ?
+                    """,
+                    payload.get("project_id"),
+                    payload.get("task_no"),
+                    payload.get("main_task"),
+                    payload.get("qty"),
+                    payload.get("budget"),
+                    payload.get("actual_cost"),
+                    payload.get("user_id")
+                )
+                
+                # Lấy kết quả trả về ngay sau mỗi lần execute SP
+                row = cursor.fetchone()
+                if not row or not cursor.description:
+                    continue
+                    
+                columns = [column[0] for column in cursor.description]
+                result_data = dict(zip(columns, row))
+                
+                # Kiểm tra mã Code do SP trả về (200 là thành công, 404/500 là lỗi)
+                code = result_data.get("Code")
+                if code != 200:
+                    self.conn.rollback()  # Rollback toàn bộ nếu có lỗi logic
+                    return {
+                        "success": False,
+                        "code": code,
+                        "message": result_data.get("Message", "Đã xảy ra lỗi không xác định.")
+                    }
+            
+            # Nếu chạy hết vòng lặp mà không có lỗi -> Commit transaction
+            self.conn.commit()
+            return {
+                "success": True,
+                "message": "Cập nhật thông tin thành công."
+            }
+            
+        except pyodbc.Error as e:
+            self.conn.rollback()
+            return {
+                "success": False,
+                "code": 500,
+                "message": f"Lỗi cơ sở dữ liệu: {str(e)}"
+            }
+        finally:
+            cursor.close()
+            
     def check_login(self, user_id: str, password: str) -> dict[str, Any] | None:
         cursor = self.conn.cursor()
         try:
