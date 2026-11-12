@@ -12,7 +12,9 @@ routes.push(
     { path: '/failure-cost/entry', redirect: '/02_Fcost/fcostEntry' },
     { path: '/failure-cost/entry/:id', redirect: to => ({ path: '/02_Fcost/fcostEntry', query: { id: to.params.id } }) },
     { path: '/02_Fcost/fcostEntry/:id', redirect: to => ({ path: '/02_Fcost/fcostEntry', query: { id: to.params.id } }) },
-    { path: '/failure-cost/list', redirect: '/02_Fcost/fcostList' }
+    { path: '/failure-cost/list', redirect: '/02_Fcost/fcostList' },
+    { path: '/daily-tasks', redirect: '/01_ProjectMgm/project_daily_tasks' },
+    { path: '/project-daily-tasks', redirect: '/01_ProjectMgm/project_daily_tasks' }
 );
 
 export const router = createRouter({
