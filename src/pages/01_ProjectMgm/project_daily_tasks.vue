@@ -17,7 +17,7 @@
         <div class="date-filter-box">
           <div class="date-filter-title">
             <i class="pi pi-calendar-clock text-blue-600"></i>
-            <span class="font-semibold text-sm text-gray-700">Plan End Date:</span>
+            <span class="font-semibold text-sm text-gray-700">Actual End Date:</span>
           </div>
 
           <div class="date-controls">
@@ -139,7 +139,7 @@
             </span>
           </div>
           <p class="subtitle">
-            Hiển thị các dự án và hạng mục công việc có ngày kết thúc theo kế hoạch (Plan End) khớp với ngày được chọn.
+            Hiển thị các dự án và hạng mục công việc có ngày kết thúc thực tế (Actual End) khớp với ngày được chọn.
           </p>
 
           <!-- KPI Metrics Chips -->
@@ -559,9 +559,9 @@ const reloadProjectData = async () => {
 const rebuildTableData = () => {
   const targetDate = selectedDateString.value
 
-  // Filter raw rows by Plan End date if a date is selected
+  // Filter raw rows by Actual End date if a date is selected
   const filteredRaw = targetDate
-    ? rawRows.value.filter(row => toDateString(row.plan_end) === targetDate)
+    ? rawRows.value.filter(row => toDateString(row.actual_end) === targetDate)
     : rawRows.value
 
   tableData.value = buildProjectHierarchy(filteredRaw)
@@ -873,10 +873,10 @@ function initOrUpdateHandsontable() {
           }
 
           // Default plan_end to currently selected date filter if active
-          const defaultPlanDate = selectedDateString.value || null
-          if (defaultPlanDate) {
-            this.setDataAtRowProp(currentGridIndex, 'plan_end', defaultPlanDate)
-            newRow.plan_end = defaultPlanDate
+          const defaultActualDate = selectedDateString.value || null
+          if (defaultActualDate) {
+            this.setDataAtRowProp(currentGridIndex, 'actual_date', defaultActualDate)
+            newRow.plan_end = defaultActualDate
           }
 
           const payloadRow = {
@@ -896,9 +896,9 @@ function initOrUpdateHandsontable() {
             actual_cost: newRow.actual_cost || 0,
             user_id: authStore.user?.userId,
             plan_start: newRow.plan_start || null,
-            plan_end: newRow.plan_end || defaultPlanDate,
+            plan_end: newRow.plan_end || null,
             actual_start: newRow.actual_start || null,
-            actual_end: newRow.actual_end || null,
+            actual_end: newRow.actual_end || defaultActualDate,
             order_no: calculatedOrderNo,
             remark: newRow.remark || ''
           }
