@@ -76,7 +76,6 @@
           </h2>
           <span class="text-[11px] text-slate-400">* All fields required</span>
         </div>
-
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
           <!-- Date and Team / Department section-->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -123,44 +122,61 @@
             />
           </div>
 
-          <!-- Project No. -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Project No. <span class="text-rose-500">*</span>
-            </label>
-            <AutoComplete
-              v-model="selectedProject"
-              :suggestions="projectSuggestions"
-              optionLabel="projectNo"
-              placeholder="-- Search Project Number --"
-              dropdown
-              forceSelection
-              class="form-control-autocomplete"
-              :inputClass="getSelectionInputClass('projectId')"
-              @complete="searchProjects"
-              @item-select="onProjectChanged"
-            >
-              <template #option="slotProps">
-                <div class="flex flex-col">
-                  <span class="font-semibold">{{ slotProps.option.projectNo }}</span>
-                  <span class="text-xs text-slate-500">{{ slotProps.option.projectName }}</span>
-                </div>
-              </template>
-            </AutoComplete>
-          </div>
+          <!-- Project No., Project Name & Main Task (3 columns) -->
+          <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Project No. -->
+            <div>
+              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Project No. <span class="text-rose-500">*</span>
+              </label>
+              <AutoComplete
+                v-model="selectedProject"
+                :suggestions="projectSuggestions"
+                optionLabel="projectNo"
+                placeholder="-- Search Project Number --"
+                dropdown
+                forceSelection
+                class="form-control-autocomplete w-full"
+                :inputClass="getSelectionInputClass('projectId')"
+                @complete="searchProjects"
+                @item-select="onProjectChanged"
+              >
+                <template #option="slotProps">
+                  <div class="flex flex-col">
+                    <span class="font-semibold">{{ slotProps.option.projectNo }}</span>
+                    <span class="text-xs text-slate-500">{{ slotProps.option.projectName }}</span>
+                  </div>
+                </template>
+              </AutoComplete>
+            </div>
 
-          <!-- Project Name (Auto Populated) -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Project Name <span class="text-slate-400 text-[10px]">(Auto-filled from Project No.)</span>
-            </label>
-            <input
-              :value="selectedProjectName"
-              type="text"
-              readonly
-              placeholder="Select Project No."
-              class="form-control form-control-readonly"
-            />
+            <!-- Project Name (Auto Populated) -->
+            <div>
+              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Project Name <span class="text-slate-400 text-[10px]">(Auto-filled from Project No.)</span>
+              </label>
+              <input
+                :value="selectedProjectName"
+                type="text"
+                readonly
+                placeholder="Select Project No."
+                class="form-control form-control-readonly"
+              />
+            </div>
+
+            <!-- Main Task -->
+            <div>
+              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Main Task <span class="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                v-model="form.mainTask"
+                placeholder="Nhập main task..."
+                class="w-full form-control-autocomplete"
+                :class="getSelectionInputClass('mainTask')"
+              />
+            </div>
           </div>
 
           <!-- PIC Section -->
@@ -193,7 +209,7 @@
             <!-- Bên phải: PIC Name -->
             <div>
               <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                PIC Name <span class="text-slate-400 text-[10px]">(Auto-filled from PIC ID)></span>
+                PIC Name <span class="text-slate-400 text-[10px]">(Auto-filled from PIC ID)</span>
               </label>
               <input
                 :value="selectedPicFullname"
@@ -553,7 +569,7 @@ const form = reactive({
   projectId: null,
   picUserId: null,
   checkerName: '', 
-  // reason: '', 
+  mainTask: '', 
   errorCatalogId: null,
   defectDescription: '',
   quantity: 1,
@@ -706,7 +722,7 @@ async function loadExistingRecord() {
         form.projectId = rec.projectId;
         form.picUserId = rec.picUserId;
         form.checkerName = rec.checkerName || rec.checker || '';
-        // form.reason = rec.reason || '';
+        form.mainTask = rec.mainTask || '';
         form.errorCatalogId = rec.errorCatalogId;
         form.defectDescription = rec.defectDescription;
         form.quantity = rec.quantity;
@@ -762,7 +778,7 @@ function validateForm() {
   if (!form.projectId) errors.push('Project No. is required');
   if (!form.picUserId) errors.push('PIC is required');
   if (!form.checkerName || !form.checkerName.trim()) errors.push('Checker is required');
-  // if (!form.reason || !form.reason.trim()) errors.push('Reason cannot be empty');
+  if (!form.mainTask || !form.mainTask.trim()) errors.push('Main Task cannot be empty');
   if (!form.errorCatalogId) errors.push('Error Catalog is required');
   if (!form.defectDescription || !form.defectDescription.trim()) errors.push('Defect Description cannot be empty');
   if (!form.quantity || form.quantity <= 0) errors.push('Quantity must be greater than 0');

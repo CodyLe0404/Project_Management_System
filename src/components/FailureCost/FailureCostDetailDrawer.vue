@@ -76,7 +76,14 @@
                   <span>{{ record.projectName }}</span>
                 </div>
               </div>
-
+              
+              <div class="col-span-2">
+                <span class="text-slate-400 block mb-0.5">Main Task</span>
+                <div class="font-semibold text-slate-900 dark:text-slate-100">
+                  <span>{{ record.mainTask }}</span>
+                </div>
+              </div>
+            
               <div>
                 <span class="text-slate-400 block mb-0.5">Person In Charge (PIC)</span>
                 <div class="flex items-center gap-1.5 font-medium text-slate-800 dark:text-slate-200">
